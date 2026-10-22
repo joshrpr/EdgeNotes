@@ -46,6 +46,8 @@
     draft: null,
     form: null,
     busy: false,
+    read: null,
+    strike: null,
     lastHash: null,
     currentPath: null,
     previousPath: null
@@ -170,11 +172,19 @@
     toastEl.innerHTML = '';
   }
 
-  function toast(message, actionLabel, action) {
+  // `angle` names what was just recorded, set in brass like every other angle
+  // in the app, so a save confirms the number and not only the action.
+  function toast(message, actionLabel, action, angle) {
     clearTimeout(toastTimer);
     toastEl.innerHTML = '';
     const text = document.createElement('span');
     text.textContent = message;
+    if (angle) {
+      const mark = document.createElement('b');
+      mark.className = 'toast-angle';
+      mark.textContent = angle;
+      text.append(' \u00b7 ', mark);
+    }
     toastEl.appendChild(text);
     if (actionLabel && action) {
       const button = document.createElement('button');
@@ -220,7 +230,7 @@
     else if ((m = /^\/knife\/([A-Za-z0-9-]+)\/log\/([A-Za-z0-9-]+)$/.exec(route.path))) view = logView(m[1], m[2], route.query);
 
     if (!view) { view = notFoundView(); }
-    app.innerHTML = view.html;
+    app.innerHTML = '<div class="screen' + (wasRouteChange ? ' enter' : '') + '">' + view.html + '</div>';
     document.title = (view.title ? view.title + ' - ' : '') + 'Edge Notes';
     if (view.after) view.after();
     hydratePhotos(app);
@@ -400,20 +410,38 @@
 
   /* ---------- knife page ---------- */
 
-  function scaleSvg(perSide) {
-    const from = 10, to = 25, width = 96, pad = 3;
-    const x = v => pad + (Math.min(to, Math.max(from, v)) - from) / (to - from) * (width - pad * 2);
+  // The signature readout: a rule, four ticks and the pip at this angle. When a
+  // knife is opened the rule draws itself; when an angle is struck the pip
+  // travels from the old value to the new one, so the page shows the
+  // measurement instead of today's date.
+  function scaleSvg(perSide, gauge) {
+    const low = 10, high = 25, width = 96, pad = 3;
+    const x = v => pad + (Math.min(high, Math.max(low, v)) - low) / (high - low) * (width - pad * 2);
     let ticks = '';
     for (const value of [10, 15, 20, 25]) {
       const tall = value === 10 || value === 25;
-      ticks += '<line x1="' + x(value) + '" y1="' + (tall ? 1 : 2.5) + '" x2="' + x(value) +
+      // Each tick lights as the rule sweeps past it.
+      const lit = Math.round((x(value) - pad) / (width - pad * 2) * 160);
+      ticks += '<line class="tick" style="animation-delay:' + lit + 'ms" x1="' + x(value) +
+        '" y1="' + (tall ? 1 : 2.5) + '" x2="' + x(value) +
         '" y2="' + (tall ? 9 : 7.5) + '" stroke="var(--brass)" stroke-opacity=".55" stroke-width="1"/>';
     }
-    return '<svg class="scale" viewBox="0 0 96 10" role="img" aria-label="' +
+    const cx = x(perSide);
+    let cls = 'scale';
+    let travel = 0;
+    if (gauge && gauge.kind === 'travel') {
+      travel = x(gauge.from) - cx;
+      cls += ' has-travel';
+    } else if (gauge) {
+      cls += gauge.kind === 'first' ? ' has-first' : ' has-reading';
+    }
+    const pip = '<circle class="pip" cx="' + cx + '" cy="5" r="2.6" fill="var(--brass)"' +
+      (travel ? ' style="--travel:' + travel.toFixed(2) + 'px"' : '') + '/>';
+    return '<svg class="' + cls + '" viewBox="0 0 96 10" role="img" aria-label="' +
       esc(Core.fmtAngle(perSide)) + ' on a scale from 10 to 25 degrees per side">' +
-      '<line x1="' + pad + '" y1="5" x2="' + (width - pad) + '" y2="5" stroke="var(--brass)" ' +
-      'stroke-opacity=".35" stroke-width="1"/>' +
-      ticks + '<circle cx="' + x(perSide) + '" cy="5" r="2.6" fill="var(--brass)"/></svg>';
+      '<line class="rail" x1="' + pad + '" y1="5" x2="' + (width - pad) + '" y2="5" stroke="var(--brass)" ' +
+      'stroke-opacity=".35" stroke-width="1" pathLength="1"/>' +
+      ticks + (gauge ? '<circle class="punch" cx="' + cx + '" cy="5" r="2.6"/>' : '') + pip + '</svg>';
   }
 
   function knifeMenu(knife) {
@@ -423,7 +451,7 @@
       '</div>';
   }
 
-  function latestCard(knife, latest) {
+  function latestCard(knife, latest, gauge) {
     if (!latest) {
       return '<section class="card"><span class="label">Last sharpened</span>' +
         '<p class="note muted">Not sharpened yet. Log the first angle and it will live here.</p></section>';
@@ -436,7 +464,7 @@
       '<div class="readout"><span class="angle">' + Core.fmtNum(latest.angle) +
       '<span class="deg">&deg;</span></span>' +
       '<span class="inc">' + Core.fmtIncluded(latest.angle) + ' included</span></div>' +
-      scaleSvg(latest.angle) +
+      scaleSvg(latest.angle, gauge) +
       '<div class="when">' + esc(upperFirst(Core.relativeDate(latest.date))) + ' &middot; ' + esc(Core.fmtDate(latest.date)) + '</div>' +
       (rating || flags ? '<div class="rating-line">' +
         (rating ? '<span>' + esc(rating) + '</span>' : '') + flags + '</div>' : '') +
@@ -450,6 +478,20 @@
     const latest = Core.latestSession(knife);
     const info = Core.stats(knife);
     const sessions = Core.sortSessions(knife.sessions);
+    // One gauge animation per arrival: a strike just landed here, or this knife
+    // was picked out of the library and the instrument is being read.
+    const strike = state.strike && state.strike.id === knife.id ? state.strike : null;
+    const reading = !strike && state.read && state.read.id === knife.id && Date.now() - state.read.at < 2000;
+    state.strike = null;
+    state.read = null;
+    let gauge = null;
+    if (strike && strike.affectsLatest) {
+      if (strike.from === null) gauge = { kind: 'first' };
+      else if (strike.from !== strike.to) gauge = { kind: 'travel', from: strike.from };
+    } else if (reading) {
+      gauge = { kind: 'reading' };
+    }
+    const stamped = strike ? strike.sessionId : null;
     const summary = info.count
       ? (info.count === 1 ? 'Sharpened once' : 'Sharpened ' + info.count + ' times') +
         (info.min === info.max
@@ -458,7 +500,8 @@
       : '';
     const history = sessions.map(session => {
       const rating = session.rating ? '<span class="s-rating">' + esc(Core.RATINGS[session.rating]) + '</span>' : '';
-      return '<li><button class="session" type="button" data-act="edit-session" data-session="' +
+      return '<li><button class="session' + (session.id === stamped ? ' is-stamped' : '') +
+        '" type="button" data-act="edit-session" data-session="' +
         esc(session.id) + '"><span class="date">' + esc(Core.fmtDate(session.date)) + rating + '</span>' +
         '<span class="s-angle">' + Core.fmtAngle(session.angle) + '</span></button></li>';
     }).join('');
@@ -475,7 +518,7 @@
       '</header>' +
       '<main class="content">' +
       (state.update && !state.updateDismissed ? updateBar() : '') +
-      latestCard(knife, latest) +
+      latestCard(knife, latest, gauge) +
       (summary ? '<p class="summary">' + summary + '</p>' : '') +
       (sessions.length ? '<ul class="history">' + history + '</ul>' : '') +
       '</main>' +
@@ -491,7 +534,14 @@
         'data-photo="' + esc(knife.photoId) + '">' + GLYPH + '</span>' +
         '<button class="close" type="button" data-act="close-viewer" aria-label="Close photo">' + ICON_CLOSE + '</button></div>';
     }
-    return { title: knife.name, html: html };
+    return {
+      title: knife.name,
+      html: html,
+      after: function () {
+        // The second tap lands with the pip, one beat after the save itself.
+        if (strike) setTimeout(function () { Native.haptic('land'); }, 500);
+      }
+    };
   }
 
   /* ---------- log sheet ---------- */
@@ -609,6 +659,7 @@
       showLogError(check.errors.angle || check.errors.date || check.errors.rating || 'Check the details.');
       return;
     }
+    const before = Core.latestSession(knife);
     const now = new Date().toISOString();
     const burrEl = document.getElementById('f-burr');
     const stroppedEl = document.getElementById('f-stropped');
@@ -622,25 +673,38 @@
       updatedAt: now
     };
     let edited = false;
+    let savedId = draft.sessionId;
     if (draft.sessionId) {
       const session = findSession(knife, draft.sessionId);
       if (!session) return;
       Object.assign(session, payload);
       edited = true;
     } else {
-      knife.sessions.push(Object.assign({ id: Core.newId('s'), createdAt: now }, payload));
+      const created = Object.assign({ id: Core.newId('s'), createdAt: now }, payload);
+      knife.sessions.push(created);
+      savedId = created.id;
     }
     knife.updatedAt = now;
     if (!Store.save(db).ok) {
       showLogError('Could not save on this phone. Its storage may be full. Free some space, then try again.');
       return;
     }
+    const latestAfter = Core.latestSession(knife);
     const target = '#/knife/' + encodeURIComponent(knife.id);
     const fromKnife = draft.fromKnife;
     state.draft = null;
+    state.strike = {
+      id: knife.id,
+      sessionId: savedId,
+      from: before ? before.angle : null,
+      to: check.value.angle,
+      affectsLatest: !!latestAfter && latestAfter.id === savedId
+    };
+    Native.haptic('save');
     if (fromKnife) backFromSheet(target);
     else replaceRoute(target);
-    toast(edited ? 'Sharpening updated.' : 'Sharpening logged.');
+    toast(edited ? 'Sharpening updated' : 'Sharpening logged', null, null,
+      Core.fmtAngle(check.value.angle) + ' per side');
   }
 
   function deleteSession() {
@@ -996,6 +1060,15 @@
   function onClick(event) {
     if (event.target === dialogEl) {
       closeDialog();
+      return;
+    }
+    // A library row is a plain link, so it keeps its own navigation; this only
+    // records that a knife was picked and answers with a tap under the thumb.
+    const row = event.target.closest ? event.target.closest('a.row') : null;
+    if (row) {
+      const opened = /^#\/knife\/([A-Za-z0-9-]+)$/.exec(row.getAttribute('href') || '');
+      if (opened) state.read = { id: opened[1], at: Date.now() };
+      Native.haptic('select');
       return;
     }
     const el = event.target.closest('[data-act]');

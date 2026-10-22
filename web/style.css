@@ -34,7 +34,7 @@ a { color: inherit; text-decoration: none; text-underline-offset: 3px; }
 h1, h2, h3, p { margin: 0; }
 ::selection { background: rgba(216, 163, 74, .3); color: var(--text); }
 .app { min-height: 100vh; min-height: 100dvh; }
-.screen { animation: fade-through 170ms ease-out; }
+.screen.enter { animation: fade-through 170ms ease-out; }
 @keyframes fade-through { from { opacity: .55; } to { opacity: 1; } }
 
 /* ---------- app bar ---------- */
@@ -579,9 +579,56 @@ input::placeholder, textarea::placeholder { color: var(--muted); }
 .btn, .rating, .row, .session, .thumb { transition: background-color 120ms ease, border-color 120ms ease; }
 .btn:active, .rating:active, .session:active { transform: scale(.99); transition-duration: 80ms; }
 
+/* Reading a knife: the rule draws, the pip settles on the angle. */
+
+.scale { overflow: visible; }
+.scale .pip, .scale .punch { transform-box: fill-box; transform-origin: center; }
+.scale .rail { stroke-dasharray: 1; }
+.scale .punch { fill: none; stroke: var(--brass); stroke-width: 1; opacity: 0; }
+.scale.has-reading .rail,
+.scale.has-first .rail { animation: rail-draw 260ms cubic-bezier(.16, 1, .3, 1) both; }
+.scale.has-reading .tick,
+.scale.has-first .tick { animation: tick-in 220ms ease-out both; }
+.scale.has-reading .pip,
+.scale.has-first .pip { animation: pip-land 320ms 150ms cubic-bezier(.16, 1, .3, 1) both; }
+.scale.has-travel .pip { animation: pip-travel 400ms 90ms cubic-bezier(.16, 1, .3, 1) both; }
+.scale.has-reading .punch,
+.scale.has-first .punch,
+.scale.has-travel .punch { animation: punch 460ms 480ms cubic-bezier(.16, 1, .3, 1) both; }
+@keyframes rail-draw { from { stroke-dashoffset: 1; } }
+@keyframes tick-in { from { opacity: 0; } }
+@keyframes pip-land { from { opacity: 0; transform: translateY(-4px) scale(.4); } }
+@keyframes pip-travel { from { transform: translateX(var(--travel, 0px)); } }
+@keyframes punch { from { opacity: .5; transform: scale(.7); } to { opacity: 0; transform: scale(3.2); } }
+
+/* A logged sharpening is ruled into the history in brass, then the ink dries. */
+
+.session.is-stamped { position: relative; animation: stamp-wash 1.2s 220ms both linear; }
+.session.is-stamped::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  background: var(--brass);
+  transform-origin: left center;
+  animation: stamp-draw 300ms 240ms both cubic-bezier(.16, 1, .3, 1),
+             stamp-settle 700ms 960ms both linear;
+}
+@keyframes stamp-wash { from { background-color: rgba(216, 163, 74, .1); } to { background-color: transparent; } }
+@keyframes stamp-draw { from { transform: scaleX(0); } }
+@keyframes stamp-settle { to { background-color: var(--line); } }
+
+/* The number you picked up brightens under the thumb. */
+.row:active .row-angle b { color: var(--brass-hi); }
+
+.toast-angle { color: var(--brass); font-weight: 600; font-variant-numeric: tabular-nums; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: .001ms !important;
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: .001ms !important;
   }

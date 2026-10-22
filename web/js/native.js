@@ -16,6 +16,23 @@ const Native = (() => {
     try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { /* unsupported */ }
   }
 
+  // Three moments: a knife is picked out of the library, a sharpening is
+  // recorded, and the record lands on the page. Each is a short tap, never a
+  // pattern, so it stays discreet on the hundredth sharpening.
+  function haptic(kind) {
+    const H = isApp && P.Haptics;
+    if (H) {
+      let call = null;
+      try {
+        if (kind === 'select' && typeof H.selectionChanged === 'function') call = H.selectionChanged();
+        else if (typeof H.impact === 'function') call = H.impact({ style: kind === 'save' ? 'MEDIUM' : 'LIGHT' });
+      } catch (e) { /* no haptic hardware */ }
+      if (call && typeof call.catch === 'function') call.catch(() => {});
+      return;
+    }
+    vibrate(kind === 'save' ? 14 : kind === 'land' ? 9 : 6);
+  }
+
   async function appInfo() {
     if (!isApp || !P.App) return { build: 0, version: 'web' };
     if (cachedInfo) return cachedInfo;
@@ -155,5 +172,5 @@ const Native = (() => {
     });
   }
 
-  return { isApp, appInfo, pickImage, saveFile, pickBackup, checkForUpdate, initBackButton, vibrate };
+  return { isApp, appInfo, pickImage, saveFile, pickBackup, checkForUpdate, initBackButton, vibrate, haptic };
 })();
