@@ -1,0 +1,16 @@
+{
+  "appId": "com.joshrpr.edgenotes",
+  "appName": "Edge Notes",
+  "webDir": "web",
+  "backgroundColor": "#0F1214",
+  "android": {
+    "backgroundColor": "#0F1214"
+  },
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "css",
+      "style": "DARK",
+      "hidden": false
+    }
+  }
+}

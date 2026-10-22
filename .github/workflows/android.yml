@@ -1,0 +1,67 @@
+name: Android APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: edge-notes-android
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platforms;android-36 build-tools;36.0.0'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run domain tests
+        run: npm test
+
+      - name: Copy web assets into Android
+        run: npx cap sync android
+
+      - name: Build signed release APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease -PbuildNumber=${{ github.run_number }} --no-daemon
+
+      - name: Name the APK
+        run: cp android/app/build/outputs/apk/release/app-release.apk edge-notes.apk
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: edge-notes-android-${{ github.run_number }}
+          name: Edge Notes build ${{ github.run_number }}
+          body: |
+            Edge Notes for Android, build ${{ github.run_number }}.
+
+            Download `edge-notes.apk` below and open it on your phone. Android may ask you to
+            allow installs from this source; that is expected for a sideloaded app.
+            Installing over an older build keeps your knives and photos.
+          files: edge-notes.apk
+          fail_on_unmatched_files: true

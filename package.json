@@ -1,0 +1,24 @@
+{
+  "name": "edge-notes",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Edge Notes - a sharpening-angle log for knives.",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "sync": "cap sync android",
+    "apk": "npm run sync && cd android && ./gradlew assembleRelease",
+    "assets": "node scripts/make-assets.mjs"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/camera": "^8.2.6",
+    "@capacitor/core": "^8.5.3",
+    "@capacitor/filesystem": "^8.1.4",
+    "@capacitor/share": "^8.0.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.3",
+    "sharp": "^0.35.5"
+  }
+}
