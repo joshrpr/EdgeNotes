@@ -32,7 +32,11 @@
 
 ## Decision Log
 
-- 2026-10-21: A `drop-shadow` on a clipped element paints outside the clip (probe: `.toolchains/rim-probe.html`, left panel glowing, right panel hard). The rim can therefore be a filter on the snapshot; no extra top-layer element is needed. Re-confirm in Task 1 on the real snapshot.
+- 2026-10-21: A `drop-shadow` on a clipped **normal** element paints outside the clip (probe: `.toolchains/rim-probe.html`, left panel glowing, right panel hard). That result does not transfer to a view-transition snapshot: see the next entry.
+- 2026-10-21 (Task 1, prototype): **the filter rim does not work.** On `::view-transition-new(root)`, `filter: invert(1)` visibly applies, but a drop-shadow is clipped by the same pseudo's `clip-path` (filter runs first, then the clip). It also costs real frames: with the filter, 215 frames / 4.65 s (worst 50.1 ms, p95 33.4 ms, 16 frames over 33 ms); without it, 264 frames / 4.4 s (worst 16.8 ms) — a locked 60 fps on the same headless software raster. The rim is therefore a dedicated named element moved by its own group (Task 5), never a filter on the root snapshot.
+- 2026-10-21 (Task 1, prototype): a 400 ms cut whose end vertices are 140%/126% leaves the viewport after ~110 ms; the remaining 290 ms is off-screen travel. Ending at 116%/102% keeps the edge visible for ~250 ms and still clears at the end. Task 4 uses the corrected keyframes.
+- 2026-10-21 (Task 1, prototype): the written carry timings (old 120 ms, new 180 ms delayed 120 ms) empty the readout at ~120 ms while the cut is still on screen, and the cut's ease-out covers ~70% of the group's travel in the first 100 ms, so the number darts and vanishes. Task 6 uses an ease-in-out group over the full 400 ms, fades the old over 260 ms, and fades the new in over 140 ms at 260 ms: the number stays readable through the cut and the hero lands as the old fades.
+- 2026-10-21 (Task 1, prototype): the back pass needs the **mirrored** geometry. The blade stripe's bottom is 14% left of its top, so moving left the *bottom* leads. Back therefore starts at top 114% / bottom 100% and ends at top -2% / bottom -16%. Starting at 100/114 put the line up to 14% inside the revealed page.
 - 2026-10-21: Direction comes from route depth, not from which function navigated: deeper is `in`, shallower is `out`, equal is `in`.
 
 ## File Structure
@@ -55,55 +59,62 @@
 - Create: `.toolchains/blade-pass.html` (throwaway, gitignored)
 
 **Interfaces:**
-- Produces: a recorded verdict on the carried number over the cut, the rim's shadow values, and the worst frame delta. Task 6 consumes the verdict; Task 5 consumes the rim values.
+- Produces: a recorded verdict on the carried number, the rim's construction (a named blade, not a filter), the corrected cut and carry numbers, and the worst frame delta. Tasks 4–6 consume them.
 
-- [ ] **Step 1: Build the prototype**
+- [x] **Step 1: Build the prototype**
 
-Two full-screen views swapped by a button that sets `location.hash` and wraps the swap in `document.startViewTransition`. View A: a dark list with a 28 px brass `17.5°` and a row to tap. View B: a dark detail page with the same number at 44 px. Include the slanted clip on `::view-transition-new(root)`, the rim below, and `view-transition-name: probe-angle` on both numbers.
+Two full-screen views swapped by a tap that wraps the swap in `document.startViewTransition`. View A: a dark list with a 28 px brass `17.5°` and a row to tap. View B: a dark detail page with the same number at 44 px. Working shape, as measured below:
 
 ```css
-::view-transition-new(root) {
-  animation: cut 400ms cubic-bezier(.22, 1, .36, 1) both;
-  filter: drop-shadow(0 0 1.5px rgba(232, 237, 240, .9))
-          drop-shadow(0 0 12px rgba(232, 237, 240, .22));
+::view-transition-new(root) { animation: blade-cut-in 400ms cubic-bezier(.22, 1, .36, 1) both; }
+:root[data-pass="out"]::view-transition-new(root) { animation-name: blade-cut-out; }
+@keyframes blade-cut-in {
+  from { clip-path: polygon(-40% 0%, 0% 0%, -14% 100%, -40% 100%); }
+  to   { clip-path: polygon(-40% 0%, 116% 0%, 102% 100%, -40% 100%); }
 }
-@keyframes cut {
-  from { clip-path: polygon(-40% 0%, -26% 0%, -40% 100%, -40% 100%); }
-  to   { clip-path: polygon(-40% 0%, 140% 0%, 126% 100%, -40% 100%); }
+@keyframes blade-cut-out {
+  from { clip-path: polygon(114% 0%, 140% 0%, 140% 100%, 100% 100%); }
+  to   { clip-path: polygon(-2% 0%, 140% 0%, 140% 100%, -16% 100%); }
 }
+.blade { position: fixed; inset: 0; pointer-events: none; opacity: 0; view-transition-name: blade; }
+:root[data-pass] .blade { opacity: 1; }
+.blade i { position: absolute; top: 0; left: 0; width: 2px; height: 100%;
+  background: #E8EDF0; transform-origin: 0 0; transform: skewX(-3.7deg);
+  box-shadow: 0 0 2px #fff, 0 0 12px rgba(232, 237, 240, .5); }
+::view-transition-group(blade) { animation: none; }
+:root[data-pass="in"]::view-transition-group(blade) { animation: blade-in 400ms cubic-bezier(.22, 1, .36, 1) both; }
+:root[data-pass="out"]::view-transition-group(blade) { animation: blade-out 400ms cubic-bezier(.22, 1, .36, 1) both; }
+@keyframes blade-in { from { transform: translateX(0); } to { transform: translateX(116%); } }
+@keyframes blade-out { from { transform: translateX(114%); } to { transform: translateX(-2%); } }
+::view-transition-group(probe-angle) {
+  animation-duration: 400ms; animation-timing-function: cubic-bezier(.4, 0, .2, 1);
+}
+::view-transition-old(probe-angle) { animation-duration: 260ms; }
+::view-transition-new(probe-angle) { animation-duration: 140ms; animation-delay: 260ms; }
 ```
 
-- [ ] **Step 2: Serve and open it**
+The first prototype used a root-qualified pseudo with a space — `:root[data-pass="out"] ::view-transition-new(root)` — which silently matches nothing; the back pass ran the forward cut because of it. Qualify the pseudo directly.
 
-Run: `python -m http.server 4323 -d .toolchains`
-Open: `http://127.0.0.1:4323/blade-pass.html`
+- [x] **Step 2: Serve and open it**
 
-- [ ] **Step 3: Inspect the rim**
+Run: `python -m http.server 8765 -d .toolchains` (8765 was free; 4323 was never needed).
+Open: `http://127.0.0.1:8765/blade-pass.html`. The app's preview panel could not draw because its window is covered, so frames were captured with `.toolchains/shoot.mjs`, a throwaway CDP script that pauses the transition at an exact millisecond and screenshots it. The live page still exposes `?slow`, `?carry=plan`, `?carry=delay` and `?carry=none`.
 
-Add a temporary override `::view-transition-new(root) { animation-duration: 4s !important; }`, trigger a pass, screenshot around 2 s.
-Expected: a 1–2 px steel line on the slanted boundary with a soft falloff, no wash over the outgoing page. If the line is invisible or clipped, record that and keep the bare cut.
+- [x] **Step 3: Inspect the rim**
 
-- [ ] **Step 4: Inspect the carried number**
+Result: the drop-shadow on the snapshot never paints — `filter: invert(1)` on the same pseudo visibly applies, so filters run, but the pseudo's `clip-path` clips the filtered result. Replaced with the named `.blade` above: a 2 px skewed steel bar with its own group, painted above both snapshots, its shadow unclipped. Verified on the boundary in both directions (forward at 100 and 250 ms, back at 120 and 220 ms): the line's translate equals the cut's percentage to the pixel (365.544 px at 88.7243% of 412).
 
-Trigger the pass and watch the 28 px number become the 44 px one.
-Expected: one number, readable throughout, no ghost left after the snapshot clears. If it floats detached over the outgoing page for most of the cut, record "delay" and test `::view-transition-group(probe-angle) { animation-delay: 180ms; }`.
+- [x] **Step 4: Inspect the carried number**
 
-- [ ] **Step 5: Measure frames**
+Result: the morph is a crossfade inside a resizing group, not a real scale. The written timings (old 120 ms, new 180 ms at 120 ms) leave the readout empty at ~120 ms while the cut is still on screen; the cut's ease-out also spends the first 100 ms covering ~70% of the travel. The working version above uses an ease-in-out group over the full 400 ms, fades the old to 260 ms and fades the new in at 260 ms for 140 ms: the number stays readable through the cut, then the hero lands. Back carries the hero into its row with the same timings.
 
-In the console, run this once, then trigger a pass:
+- [x] **Step 5: Measure frames**
 
-```js
-const gaps = []; let last = performance.now();
-(function tick(now) { gaps.push(now - last); last = now;
-  if (gaps.length < 90) requestAnimationFrame(tick);
-  else console.log('worst frame', Math.max(...gaps).toFixed(1), 'ms'); })(last);
-```
+Result: headless Chromium, 412×892, software raster, ten passes, `requestAnimationFrame` deltas under 200 ms: median 16.7 ms, p95 16.8 ms, worst **16.8 ms**, 0 frames over 33.4 ms. With the abandoned root filter on the same run: worst 50.1 ms, p95 33.4 ms, 16 frames over 33.4 ms. This is the desktop browser, not the emulator; Task 5 owns that number.
 
-Expected: worst ≤ 34 ms on the desktop browser. Record the number; the emulator is measured in Task 5.
+- [x] **Step 6: Record and stop**
 
-- [ ] **Step 6: Record and stop**
-
-Append the verdicts to the Decision Log in this file (rim on/off, carry as-is or delayed, worst frame). No commit; `.toolchains/` is ignored.
+Verdicts are in the Decision Log. No commit; `.toolchains/` is ignored.
 **Gate:** show the prototype and stop for the owner's approval of the look before Task 2.
 
 ---
@@ -317,19 +328,21 @@ git commit -m "Paint route changes inside a view transition."
   ::view-transition-new(root) {
     animation: blade-cut-in 400ms cubic-bezier(.22, 1, .36, 1) both;
   }
-  :root[data-pass="out"] ::view-transition-new(root) {
+  :root[data-pass="out"]::view-transition-new(root) {
     animation-name: blade-cut-out;
   }
 }
 @keyframes blade-cut-in {
-  from { clip-path: polygon(-40% 0%, -26% 0%, -40% 100%, -40% 100%); }
-  to   { clip-path: polygon(-40% 0%, 140% 0%, 126% 100%, -40% 100%); }
+  from { clip-path: polygon(-40% 0%, 0% 0%, -14% 100%, -40% 100%); }
+  to   { clip-path: polygon(-40% 0%, 116% 0%, 102% 100%, -40% 100%); }
 }
 @keyframes blade-cut-out {
-  from { clip-path: polygon(140% 0%, 140% 0%, 140% 100%, 140% 100%); }
-  to   { clip-path: polygon(-26% 0%, 140% 0%, 140% 100%, -40% 100%); }
+  from { clip-path: polygon(114% 0%, 140% 0%, 140% 100%, 100% 100%); }
+  to   { clip-path: polygon(-2% 0%, 140% 0%, 140% 100%, -16% 100%); }
 }
 ```
+
+The leading edge must be on screen for the whole 400 ms. `in` starts with its top at 0% (just revealed) and its bottom at -14% (still hidden); it ends with the bottom at 102%, the last vertex to clear. `out` is mirrored because the blade bar's bottom is 14% left of its top: moving left, the bottom leads, so `out` starts at top 114% / bottom 100% and ends at -2% / -16%. The old 140%/126% end left the viewport at ~110 ms.
 
 - [ ] **Step 2: Look at both directions, slowly**
 
@@ -358,31 +371,55 @@ git commit -m "Cut the next screen in on a honed edge."
 ### Task 5: The rim
 
 **Files:**
+- Modify: `web/index.html`
 - Modify: `web/style.css`
 
 **Interfaces:**
-- Consumes: the rim verdict and values from Task 1.
+- Consumes: `data-pass` from Task 3 and the cut geometry from Task 4.
 - Produces: the final edge treatment; no later task changes it.
 
-- [ ] **Step 1: Add the rim**
+- [ ] **Step 1: Add one blade, outside every view**
 
-```css
-@media (prefers-reduced-motion: no-preference) {
-  ::view-transition-new(root) {
-    filter: drop-shadow(0 0 1.5px rgba(232, 237, 240, .9))
-            drop-shadow(0 0 12px rgba(232, 237, 240, .22));
-  }
-}
+In `web/index.html`, after `#app` and before the scripts:
+
+```html
+<div class="blade" aria-hidden="true"><i></i></div>
 ```
 
-If Task 1 found the rim clipped or too heavy, apply the values it recorded instead and keep the same two-shadow shape.
+It lives outside the views so it exists in every state; it is named permanently, so it is captured into its own group and painted above the root snapshots rather than inside them.
 
-- [ ] **Step 2: Inspect the edge**
+- [ ] **Step 2: Style it and move it with the cut**
 
-Slow the animation to 4 s and screenshot mid-pass.
-Expected: a thin bright line along the cut with a soft falloff; no halo over the old page beyond ~12 px; no brass.
+```css
+.blade {
+  position: fixed; inset: 0; pointer-events: none; opacity: 0;
+  view-transition-name: blade;
+}
+:root[data-pass] .blade { opacity: 1; }
+.blade i {
+  position: absolute; top: 0; left: 0; width: 2px; height: 100%;
+  background: #E8EDF0; transform-origin: 0 0; transform: skewX(-3.7deg);
+  box-shadow: 0 0 2px #fff, 0 0 12px rgba(232, 237, 240, .5);
+}
+::view-transition-group(blade) { animation: none; }
+:root[data-pass="in"]::view-transition-group(blade) {
+  animation: blade-in 400ms cubic-bezier(.22, 1, .36, 1) both;
+}
+:root[data-pass="out"]::view-transition-group(blade) {
+  animation: blade-out 400ms cubic-bezier(.22, 1, .36, 1) both;
+}
+@keyframes blade-in { from { transform: translateX(0); } to { transform: translateX(116%); } }
+@keyframes blade-out { from { transform: translateX(114%); } to { transform: translateX(-2%); } }
+```
 
-- [ ] **Step 3: Measure on the emulator**
+The bar's `translateX` values are the cut's **top-edge** percentages: 0→116 for `in`, 114→-2 for `out`. The skew puts its bottom 14% of the viewport width to the left, matching the cut. If the two drift, the line sits inside the revealed page; verify at 100 ms and 250 ms.
+
+- [ ] **Step 3: Inspect the edge**
+
+Slow the animation to 4 s and screenshot mid-pass, both directions and at both edges.
+Expected: a 2 px steel line with a soft falloff exactly on the boundary; no brass; no line left at the screen edge after the pass; nothing visible at rest.
+
+- [ ] **Step 4: Measure on the emulator**
 
 Add a temporary probe that records `requestAnimationFrame` deltas between `transition.ready` and `transition.finished` and paints the worst value in a fixed corner element when `location.search.indexOf('probe') !== -1`. Build, install and sample ten passes:
 
@@ -397,12 +434,12 @@ export GRADLE_USER_HOME="$PWD/.toolchains/gradle-home"
 .toolchains/sdk/platform-tools/adb.exe shell am start -n com.joshrpr.edgenotes/.MainActivity
 ```
 
-Expected: worst delta ≤ 50 ms on the software-rendered emulator; if it is worse, keep the 1.5 px shadow and drop the 12 px one. Remove the probe before committing.
+Expected: worst delta ≤ 50 ms on the software-rendered emulator. The blade is transform-only, so if frames fall, drop the 12 px box-shadow first and keep the 2 px bar; a hard 1–2 px line with no glow still reads as steel. Remove the probe before committing.
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
-git add web/style.css
+git add web/index.html web/style.css
 git commit -m "Light the cut along its edge."
 ```
 
@@ -459,13 +496,13 @@ function clearCarry() {
 ```css
 ::view-transition-group(knife-angle) {
   animation-duration: 400ms;
-  animation-timing-function: cubic-bezier(.22, 1, .36, 1);
+  animation-timing-function: cubic-bezier(.4, 0, .2, 1);
 }
-::view-transition-old(knife-angle) { animation-duration: 200ms; }
-::view-transition-new(knife-angle) { animation-duration: 200ms; animation-delay: 120ms; }
+::view-transition-old(knife-angle) { animation-duration: 260ms; }
+::view-transition-new(knife-angle) { animation-duration: 140ms; animation-delay: 260ms; }
 ```
 
-If Task 1 recorded "delay", add that delay to the group rule instead.
+The group must not use the cut's ease-out: it would spend ~70% of the travel in the first 100 ms and the number would be gone before the eye follows it. Ease-in-out spreads the morph over the full 400 ms; the old fades at 260 ms and the new lands in the readout at the same moment.
 
 - [ ] **Step 4: Verify both directions**
 
@@ -493,7 +530,7 @@ git commit -m "Carry the angle between the library and its knife."
 
 **Files:**
 - Modify: `docs/design-brief.md`
-- Delete: `.toolchains/blade-pass.html`, `.toolchains/rim-probe.html`
+- Delete: `.toolchains/blade-pass.html`, `.toolchains/rim-probe.html`, `.toolchains/shoot.mjs`, `.toolchains/shots/`
 
 - [ ] **Step 1: Record the motion in the brief**
 
@@ -534,7 +571,7 @@ Expected: no clipping at 1.3, no pass under Reduce Motion, the ceremony still ru
 - [ ] **Step 4: Delete the throwaway files and commit**
 
 ```bash
-rm .toolchains/blade-pass.html .toolchains/rim-probe.html
+rm -r .toolchains/blade-pass.html .toolchains/rim-probe.html .toolchains/shoot.mjs .toolchains/shots
 git add docs/design-brief.md
 git commit -m "Record the blade pass in the motion brief."
 ```
