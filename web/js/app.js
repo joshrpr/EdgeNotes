@@ -16,6 +16,20 @@
     '<circle cx="9" cy="37" r="1.4" fill="currentColor" stroke="none"/>' +
     '<circle cx="15" cy="37" r="1.4" fill="currentColor" stroke="none"/></svg>';
 
+  // One drawn icon family: 24 px, 2 px round strokes.
+  const ICON_BACK =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
+    '<path d="M15 4.5 7.5 12 15 19.5"/></svg>';
+  const ICON_MORE =
+    '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">' +
+    '<circle cx="12" cy="5.5" r="1.9"/><circle cx="12" cy="12" r="1.9"/>' +
+    '<circle cx="12" cy="18.5" r="1.9"/></svg>';
+  const ICON_CLOSE =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+    'stroke-linecap="round" aria-hidden="true" focusable="false">' +
+    '<path d="M6.5 6.5 17.5 17.5M17.5 6.5 6.5 17.5"/></svg>';
+
   const PHOTO_CACHE = new Map();
   const pendingDeletes = new Map();
   let db = Store.load();
@@ -28,6 +42,7 @@
     updateDismissed: false,
     menu: false,
     dialog: null,
+    dialogReturn: null,
     draft: null,
     form: null,
     busy: false,
@@ -45,6 +60,11 @@
 
   function plural(n, one, many) {
     return n + ' ' + (n === 1 ? one : many);
+  }
+
+  // Relative dates are captions in the library and sentences on the knife page.
+  function upperFirst(text) {
+    return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
   }
 
   function findKnife(id) {
@@ -215,8 +235,8 @@
     const latest = Core.latestSession(knife);
     const angle = latest
       ? '<b>' + Core.fmtAngle(latest.angle) + '</b><small>' + esc(Core.relativeDate(latest.date)) + '</small>'
-      : '<b class="none">&mdash;</b><small>not yet</small>';
-    const meta = latest ? Core.fmtIncluded(latest.angle) + ' included' : 'No sharpenings yet';
+      : '<b class="none">&mdash;</b>';
+    const meta = latest ? Core.fmtIncluded(latest.angle) + ' included' : 'Not sharpened yet';
     return '<li><a class="row" href="#/knife/' + encodeURIComponent(knife.id) + '">' +
       photoSlot(knife.photoId, 'thumb') +
       '<span class="row-main"><span class="row-name">' + esc(knife.name) + '</span>' +
@@ -230,7 +250,8 @@
         '<p>Add a knife to remember its angle. Everything stays on this phone.</p></div>';
     }
     return '<div class="empty">' + GLYPH + '<h2>No knives match &ldquo;' + esc(state.query.trim()) + '&rdquo;</h2>' +
-      '<p>Try a shorter name, or clear the search.</p></div>';
+      '<p>Try a shorter name, or clear the search.</p>' +
+      '<button class="btn" type="button" data-act="clear-search">Clear search</button></div>';
   }
 
   function listRegion() {
@@ -268,7 +289,8 @@
   function updateBar() {
     return '<div class="update"><span>Build ' + esc(state.update.version) + ' is ready.</span>' +
       '<a href="' + esc(state.update.apk) + '" data-act="update-download" rel="noopener">Download</a>' +
-      '<button class="icon-btn" type="button" data-act="dismiss-update" aria-label="Dismiss update">&times;</button></div>';
+      '<button class="icon-btn" type="button" data-act="dismiss-update" aria-label="Dismiss update">' +
+      ICON_CLOSE + '</button></div>';
   }
 
   function footer() {
@@ -286,6 +308,26 @@
   function dialogBox(label, body, actions) {
     return '<div class="dialog-box" role="dialog" aria-modal="true" aria-label="' + esc(label) + '">' +
       body + '<div class="row-actions">' + actions + '</div></div>';
+  }
+
+  function openDialog(dialog, trigger) {
+    state.dialogReturn = trigger || null;
+    state.dialog = dialog;
+    render(true);
+  }
+
+  // Closing returns focus to the control that opened the dialog, so a keyboard
+  // or screen-reader user is not dropped at the top of the page.
+  function closeDialog() {
+    const trigger = state.dialogReturn;
+    state.dialog = null;
+    state.dialogReturn = null;
+    render(true);
+    if (!trigger) return;
+    const opener = document.querySelector('[data-act="' + trigger + '"]');
+    const fallback = document.querySelector('[data-act="menu"]') || document.getElementById('search');
+    if (opener) opener.focus();
+    else if (fallback) fallback.focus();
   }
 
   function renderDialog() {
@@ -349,7 +391,7 @@
     return {
       title: 'Not found',
       html: '<header class="appbar"><button class="icon-btn" type="button" data-act="back-to-library" ' +
-        'aria-label="Back to library">&lsaquo;</button>' +
+        'aria-label="Back to library">' + ICON_BACK + '</button>' +
         '<h1>Not here</h1></header>' +
         '<div class="empty">' + GLYPH + '<h2>That page is gone</h2><p>The knife may have been deleted.</p>' +
         '<a class="btn" href="#/">Back to the library</a></div>'
@@ -395,7 +437,7 @@
       '<span class="deg">&deg;</span></span>' +
       '<span class="inc">' + Core.fmtIncluded(latest.angle) + ' included</span></div>' +
       scaleSvg(latest.angle) +
-      '<div class="when">' + esc(Core.relativeDate(latest.date)) + ' &middot; ' + esc(Core.fmtDate(latest.date)) + '</div>' +
+      '<div class="when">' + esc(upperFirst(Core.relativeDate(latest.date))) + ' &middot; ' + esc(Core.fmtDate(latest.date)) + '</div>' +
       (rating || flags ? '<div class="rating-line">' +
         (rating ? '<span>' + esc(rating) + '</span>' : '') + flags + '</div>' : '') +
       (latest.notes ? '<p class="note">' + esc(latest.notes) + '</p>' : '') +
@@ -422,13 +464,13 @@
     }).join('');
 
     let html = '<header class="appbar">' +
-      '<button class="icon-btn" type="button" data-act="back-to-library" aria-label="Back to library">&lsaquo;</button>' +
+      '<button class="icon-btn" type="button" data-act="back-to-library" aria-label="Back to library">' + ICON_BACK + '</button>' +
       (knife.photoId
-        ? '<a href="#/knife/' + encodeURIComponent(knife.id) + '/photo" aria-label="Open photo">' + photoSlot(knife.photoId, 'avatar') + '</a>'
+        ? '<a class="avatar-link" href="#/knife/' + encodeURIComponent(knife.id) + '/photo" aria-label="Open photo">' + photoSlot(knife.photoId, 'avatar') + '</a>'
         : photoSlot(null, 'avatar')) +
       '<span class="title">' + esc(knife.name) + '</span>' +
-      '<button class="icon-btn right" type="button" data-act="menu" aria-label="More options" aria-expanded="' +
-      (state.menu ? 'true' : 'false') + '">&vellip;</button>' +
+      '<button class="icon-btn right" type="button" data-act="menu" aria-label="More options" ' +
+      'aria-haspopup="menu" aria-expanded="' + (state.menu ? 'true' : 'false') + '">' + ICON_MORE + '</button>' +
       (state.menu ? knifeMenu(knife) : '') +
       '</header>' +
       '<main class="content">' +
@@ -442,9 +484,12 @@
       (latest ? 'Sharpen again &middot; ' + Core.fmtAngle(latest.angle) : 'Log first sharpening') + '</a></div>';
 
     if (viewer && knife.photoId) {
+      // The glyph holds the frame until the stored photo loads, so the viewer
+      // never paints an image element without a source.
       html += '<div class="viewer" data-act="close-viewer">' +
-        '<img data-photo="' + esc(knife.photoId) + '" alt="Photo of ' + esc(knife.name) + '">' +
-        '<button class="close" type="button" data-act="close-viewer" aria-label="Close photo">&times;</button></div>';
+        '<span class="viewer-photo" role="img" aria-label="Photo of ' + esc(knife.name) + '" ' +
+        'data-photo="' + esc(knife.photoId) + '">' + GLYPH + '</span>' +
+        '<button class="close" type="button" data-act="close-viewer" aria-label="Close photo">' + ICON_CLOSE + '</button></div>';
     }
     return { title: knife.name, html: html };
   }
@@ -487,14 +532,14 @@
     }).join('');
 
     const html = '<header class="appbar">' +
-      '<button class="icon-btn" type="button" data-act="back-to-knife" aria-label="Back to knife">&lsaquo;</button>' +
+      '<button class="icon-btn" type="button" data-act="back-to-knife" aria-label="Back to knife">' + ICON_BACK + '</button>' +
       '<h1>' + (existing ? 'Edit sharpening' : 'Log sharpening') + '</h1></header>' +
       '<form class="form" id="session-form" novalidate>' +
       '<label class="field"><span class="label">Date</span>' +
       '<input id="f-date" type="date" value="' + esc(draft.date) + '" max="' + today + '" required></label>' +
       '<div class="field"><label class="label" for="f-angle">Angle per side</label>' +
       '<div class="angle-row"><input class="input" id="f-angle" type="text" inputmode="decimal" ' +
-      'autocomplete="off" value="' + esc(draft.angle) + '" aria-describedby="f-angle-hint"></div>' +
+      'autocomplete="off" placeholder="e.g. 17.5" value="' + esc(draft.angle) + '" aria-describedby="f-angle-hint"></div>' +
       '<span class="inc" id="f-included">' + (parsed === null ? 'No angle yet' : Core.fmtIncluded(parsed) + ' included') + '</span>' +
       '<span class="hint" id="f-angle-hint">1&ndash;45&deg; per side. A comma works too.</span></div>' +
       '<div class="field"><span class="label">How did it cut?</span><div class="ratings">' + ratingRows + '</div></div>' +
@@ -667,7 +712,7 @@
     const hasPhoto = !!f.pending || (!!f.photoId && !f.remove);
 
     const html = '<header class="appbar">' +
-      '<button class="icon-btn" type="button" data-act="close-knife-form" aria-label="Back">&lsaquo;</button>' +
+      '<button class="icon-btn" type="button" data-act="close-knife-form" aria-label="Back">' + ICON_BACK + '</button>' +
       '<h1>' + (existing ? 'Edit knife' : 'New knife') + '</h1></header>' +
       '<form class="form" id="knife-form" novalidate>' +
       '<label class="field"><span class="label">Name</span>' +
@@ -683,7 +728,8 @@
       '<textarea id="k-notes" maxlength="2000" placeholder="Steel, handle, anything worth remembering">' +
       esc(f.notes) + '</textarea></label>' +
       '<p class="error" id="f-error" role="alert" hidden></p>' +
-      '<div class="actionbar"><button class="btn primary" type="submit">Save</button></div>' +
+      '<div class="actionbar"><button class="btn primary" id="k-save" type="submit"' +
+      (f.name.trim() ? '' : ' disabled') + '>Save</button></div>' +
       '</form>';
 
     return {
@@ -695,8 +741,19 @@
           event.preventDefault();
           saveKnifeForm();
         });
+        const name = document.getElementById('k-name');
+        if (name) name.addEventListener('input', syncKnifeSave);
       }
     };
+  }
+
+  function syncKnifeSave() {
+    const name = document.getElementById('k-name');
+    const save = document.getElementById('k-save');
+    const error = document.getElementById('f-error');
+    const filled = !!(name && name.value.trim());
+    if (save) save.disabled = !filled;
+    if (filled && error) error.hidden = true;
   }
 
   async function pickKnifePhoto(source) {
@@ -840,6 +897,7 @@
     const index = db.knives.indexOf(knife);
     db.knives.splice(index, 1);
     state.dialog = null;
+    state.dialogReturn = null;
     state.menu = false;
     if (!Store.save(db).ok) {
       db.knives.splice(index, 0, knife);
@@ -883,13 +941,11 @@
       const parsed = Core.parseBackup(text);
       const existingPhotos = await Photos.keys();
       const merged = Core.mergeBackup(db, parsed, existingPhotos);
-      state.dialog = { type: 'restore', merged: merged, source: file.name || 'backup.json' };
-      render(true);
+      openDialog({ type: 'restore', merged: merged, source: file.name || 'backup.json' }, 'restore');
     } catch (e) {
       const message = String((e && e.message) || e || '');
       if (/cancel/i.test(message)) return;
-      state.dialog = { type: 'restore-error', message: message || 'That backup could not be read.' };
-      render(true);
+      openDialog({ type: 'restore-error', message: message || 'That backup could not be read.' }, 'restore');
     }
   }
 
@@ -905,6 +961,7 @@
     db = d.merged.data;
     state.busy = false;
     state.dialog = null;
+    state.dialogReturn = null;
     if (!Store.save(db).ok) {
       toast('Could not save on this phone. Its storage may be full.');
       return;
@@ -921,6 +978,7 @@
     const d = state.dialog;
     if (!d || d.type !== 'erase') return;
     state.dialog = null;
+    state.dialogReturn = null;
     for (const timer of pendingDeletes.values()) clearTimeout(timer);
     pendingDeletes.clear();
     try {
@@ -937,8 +995,7 @@
 
   function onClick(event) {
     if (event.target === dialogEl) {
-      state.dialog = null;
-      render(true);
+      closeDialog();
       return;
     }
     const el = event.target.closest('[data-act]');
@@ -962,8 +1019,7 @@
         break;
       case 'delete-knife':
         state.menu = false;
-        state.dialog = { type: 'delete-knife', id: knifeId };
-        render(true);
+        openDialog({ type: 'delete-knife', id: knifeId }, 'delete-knife');
         break;
       case 'confirm-delete-knife':
         if (state.dialog && state.dialog.id) deleteKnife(state.dialog.id);
@@ -1014,6 +1070,14 @@
         state.updateDismissed = true;
         render(true);
         break;
+      case 'clear-search': {
+        state.query = '';
+        const input = document.getElementById('search');
+        const region = document.getElementById('list-region');
+        if (input) { input.value = ''; input.focus(); }
+        if (region) { region.innerHTML = listRegion(); hydratePhotos(region); }
+        break;
+      }
       case 'back-to-library':
         back('#/');
         break;
@@ -1027,26 +1091,46 @@
         applyRestore();
         break;
       case 'erase':
-        state.dialog = { type: 'erase' };
-        render(true);
+        openDialog({ type: 'erase' }, 'erase');
         break;
       case 'confirm-erase':
         eraseEverything();
         break;
       case 'cancel-dialog':
-        state.dialog = null;
-        render(true);
+        closeDialog();
         break;
     }
   }
 
   /* ---------- start ---------- */
 
+  function trapDialogFocus(event) {
+    if (event.key !== 'Tab' || !state.dialog) return;
+    const items = dialogEl.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    if (!items.length) return;
+    const first = items[0];
+    const last = items[items.length - 1];
+    if (!dialogEl.contains(document.activeElement)) {
+      event.preventDefault();
+      first.focus();
+      return;
+    }
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
   function onKeydown(event) {
+    trapDialogFocus(event);
     if (event.key !== 'Escape') return;
-    if (state.menu || state.dialog) {
+    if (state.dialog) {
+      closeDialog();
+    } else if (state.menu) {
       state.menu = false;
-      state.dialog = null;
       render(true);
     } else if (/\/photo$/.test(location.hash || '')) {
       replaceRoute('#/knife/' + encodeURIComponent(currentKnifeId()));
@@ -1061,8 +1145,7 @@
     render(true);
     Native.initBackButton(function () {
       if (state.dialog) {
-        state.dialog = null;
-        render(true);
+        closeDialog();
         return true;
       }
       if (state.menu) {
