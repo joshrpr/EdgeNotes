@@ -238,6 +238,35 @@
       !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   }
 
+  // The angle a pass carries is named on the old page before the swap and on
+  // the new page while it is built, so both snapshots share one element.
+  function nameCarry(el) {
+    el.style.viewTransitionName = 'knife-angle';
+    el.setAttribute('data-vt-angle', '');
+  }
+
+  function prepareCarry(fromPath, toPath) {
+    if (!state.passPending) return;
+    if (toPath === '/' && /^\/knife\/[A-Za-z0-9-]+$/.test(fromPath)) {
+      const hero = app.querySelector('.card .angle');
+      if (hero) nameCarry(hero);
+      return;
+    }
+    if (state.read && state.read.id) {
+      const row = app.querySelector('a.row[data-knife="' + state.read.id + '"] .row-angle b');
+      if (row && !row.classList.contains('none')) nameCarry(row);
+    }
+  }
+
+  // Names must not outlive the pass that used them, or the next transition
+  // would try to carry a number that no longer has a partner.
+  function clearCarry() {
+    for (const el of app.querySelectorAll('[data-vt-angle]')) {
+      el.style.viewTransitionName = '';
+      el.removeAttribute('data-vt-angle');
+    }
+  }
+
   function render(force) {
     const route = parseRoute();
     const key = route.path + '?' + route.query.toString();
@@ -258,6 +287,8 @@
     const token = wasRouteChange ? ++routeSeq : routeSeq;
 
     state.passPending = pass;
+    // Before buildView: knifeView consumes state.read, which prepareCarry needs.
+    prepareCarry(fromPath, route.path);
     const view = buildView(route);
     state.passPending = false;
 
@@ -282,19 +313,23 @@
       state.passing = false;
       delete document.documentElement.dataset.pass;
       arrive();
+      clearCarry();
     }
     transition.finished.then(finish, finish);
   }
 
   /* ---------- library ---------- */
 
-  function rowHtml(knife) {
+  function rowHtml(knife, carryId) {
     const latest = Core.latestSession(knife);
+    const carried = latest && knife.id === carryId
+      ? ' style="view-transition-name:knife-angle" data-vt-angle'
+      : '';
     const angle = latest
-      ? '<b>' + Core.fmtAngle(latest.angle) + '</b><small>' + esc(Core.relativeDate(latest.date)) + '</small>'
+      ? '<b' + carried + '>' + Core.fmtAngle(latest.angle) + '</b><small>' + esc(Core.relativeDate(latest.date)) + '</small>'
       : '<b class="none">&mdash;</b>';
     const meta = latest ? Core.fmtIncluded(latest.angle) + ' included' : 'Not sharpened yet';
-    return '<li><a class="row" href="#/knife/' + encodeURIComponent(knife.id) + '">' +
+    return '<li><a class="row" href="#/knife/' + encodeURIComponent(knife.id) + '" data-knife="' + esc(knife.id) + '">' +
       photoSlot(knife.photoId, 'thumb') +
       '<span class="row-main"><span class="row-name">' + esc(knife.name) + '</span>' +
       '<span class="row-meta">' + esc(meta) + '</span></span>' +
@@ -314,8 +349,13 @@
   function listRegion() {
     const knives = Core.searchKnives(db.knives, state.query);
     if (!knives.length) return emptyHtml();
+    // Coming back from a knife, its row's angle is the incoming half of the carry.
+    const leaving = state.passPending && state.currentPath
+      ? /^\/knife\/([A-Za-z0-9-]+)$/.exec(state.currentPath)
+      : null;
+    const carryId = leaving ? leaving[1] : null;
     let html = '<ul class="list">';
-    for (const knife of knives) html += rowHtml(knife);
+    for (const knife of knives) html += rowHtml(knife, carryId);
     return html + '</ul>';
   }
 
@@ -493,7 +533,7 @@
       '</div>';
   }
 
-  function latestCard(knife, latest, gauge) {
+  function latestCard(knife, latest, gauge, carry) {
     if (!latest) {
       return '<section class="card"><span class="label">Last sharpened</span>' +
         '<p class="note muted">Not sharpened yet. Log the first angle and it will live here.</p></section>';
@@ -503,7 +543,8 @@
       (latest.stropped ? '<span class="flag">Stropped</span>' : '');
     return '<section class="card">' +
       '<span class="label">Last sharpened</span>' +
-      '<div class="readout"><span class="angle">' + Core.fmtNum(latest.angle) +
+      '<div class="readout"><span class="angle"' +
+      (carry ? ' style="view-transition-name:knife-angle" data-vt-angle' : '') + '>' + Core.fmtNum(latest.angle) +
       '<span class="deg">&deg;</span></span>' +
       '<span class="inc">' + Core.fmtIncluded(latest.angle) + ' included</span></div>' +
       scaleSvg(latest.angle, gauge) +
@@ -534,6 +575,7 @@
       gauge = { kind: 'reading' };
     }
     const stamped = strike ? strike.sessionId : null;
+    const carry = !!(state.passPending && reading);
     const summary = info.count
       ? (info.count === 1 ? 'Sharpened once' : 'Sharpened ' + info.count + ' times') +
         (info.min === info.max
@@ -560,7 +602,7 @@
       '</header>' +
       '<main class="content">' +
       (state.update && !state.updateDismissed ? updateBar() : '') +
-      latestCard(knife, latest, gauge) +
+      latestCard(knife, latest, gauge, carry) +
       (summary ? '<p class="summary">' + summary + '</p>' : '') +
       (sessions.length ? '<ul class="history">' + history + '</ul>' : '') +
       '</main>' +

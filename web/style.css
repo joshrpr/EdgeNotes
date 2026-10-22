@@ -667,6 +667,17 @@ input::placeholder, textarea::placeholder { color: var(--muted); }
 @keyframes blade-in { from { transform: translateX(0); } to { transform: translateX(116%); } }
 @keyframes blade-out { from { transform: translateX(114%); } to { transform: translateX(-2%); } }
 
+/* The knife's angle is one element across the swap: its row size and its hero
+   size are the ends of a shared group. Ease-in-out spreads the move over the
+   whole pass; the old number fades as the new one lands. */
+
+::view-transition-group(knife-angle) {
+  animation-duration: 400ms;
+  animation-timing-function: cubic-bezier(.4, 0, .2, 1);
+}
+::view-transition-old(knife-angle) { animation-duration: 260ms; }
+::view-transition-new(knife-angle) { animation-duration: 140ms; animation-delay: 260ms; }
+
 @media (prefers-reduced-motion: no-preference) {
   ::view-transition-old(root) { animation: none; }
   ::view-transition-new(root) {
