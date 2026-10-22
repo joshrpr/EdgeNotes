@@ -24,16 +24,29 @@ const Native = (() => {
     return cachedInfo;
   }
 
-  async function photoBlob(photo) {
-    const uri = photo && (photo.uri || photo.webPath || photo.path);
-    if (!uri) throw new Error('The camera did not return a photo.');
-    if (uri.startsWith('data:') || uri.startsWith('blob:')) return (await fetch(uri)).blob();
-    if (P.Filesystem) {
-      const result = await P.Filesystem.readFile({ path: uri });
-      const bytes = Uint8Array.from(atob(result.data), c => c.charCodeAt(0));
-      return new Blob([bytes], { type: 'image/jpeg' });
+  // takePhoto resolves to one media result; chooseFromGallery resolves to { results: [...] }.
+  function mediaItem(result) {
+    const photo = result && Array.isArray(result.results) ? result.results[0] : result;
+    if (!photo || !(photo.uri || photo.webPath || photo.path)) {
+      throw new Error('No photo was returned.');
     }
-    return (await fetch(uri)).blob();
+    return photo;
+  }
+
+  async function photoBlob(result) {
+    const photo = mediaItem(result);
+    const uri = photo.uri || photo.webPath || photo.path;
+    if (uri.startsWith('data:') || uri.startsWith('blob:')) return (await fetch(uri)).blob();
+    if (P.Filesystem && !/^[a-z][a-z0-9+.-]*:/i.test(uri)) {
+      try {
+        const file = await P.Filesystem.readFile({ path: uri });
+        const bytes = Uint8Array.from(atob(file.data), c => c.charCodeAt(0));
+        return new Blob([bytes], { type: 'image/jpeg' });
+      } catch (e) {
+        if (!photo.webPath) throw e;
+      }
+    }
+    return (await fetch(photo.webPath || uri)).blob();
   }
 
   async function cameraPhoto(source) {
