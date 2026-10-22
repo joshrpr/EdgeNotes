@@ -585,6 +585,11 @@ input::placeholder, textarea::placeholder { color: var(--muted); }
 .scale .pip, .scale .punch { transform-box: fill-box; transform-origin: center; }
 .scale .rail { stroke-dasharray: 1; }
 .scale .punch { fill: none; stroke: var(--brass); stroke-width: 1; opacity: 0; }
+/* A gauge waiting for the cut to land is not drawn yet; arrival adds has-* and
+   clears data-gauge, so the ceremony starts from an empty instrument. */
+.scale[data-gauge] .rail { stroke-dashoffset: 1; }
+.scale[data-gauge] .tick { opacity: 0; }
+.scale[data-gauge] .pip { opacity: 0; }
 .scale.has-reading .rail,
 .scale.has-first .rail { animation: rail-draw 260ms cubic-bezier(.16, 1, .3, 1) both; }
 .scale.has-reading .tick,
@@ -624,6 +629,28 @@ input::placeholder, textarea::placeholder { color: var(--muted); }
 .row:active .row-angle b { color: var(--brass-hi); }
 
 .toast-angle { color: var(--brass); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* Route changes: the next screen is cut in behind a slanted edge. The old page
+   never moves; only the incoming snapshot is clipped. `in` starts with the
+   top edge on screen and the bottom still hidden; `out` is its mirror. */
+
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root) { animation: none; }
+  ::view-transition-new(root) {
+    animation: blade-cut-in 400ms cubic-bezier(.22, 1, .36, 1) both;
+  }
+  :root[data-pass="out"]::view-transition-new(root) {
+    animation-name: blade-cut-out;
+  }
+}
+@keyframes blade-cut-in {
+  from { clip-path: polygon(-40% 0%, 0% 0%, -14% 100%, -40% 100%); }
+  to   { clip-path: polygon(-40% 0%, 116% 0%, 102% 100%, -40% 100%); }
+}
+@keyframes blade-cut-out {
+  from { clip-path: polygon(114% 0%, 140% 0%, 140% 100%, 100% 100%); }
+  to   { clip-path: polygon(-2% 0%, 140% 0%, 140% 100%, -16% 100%); }
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
