@@ -144,22 +144,14 @@ Deleting an entry closes the sheet and shows Undo; nothing else interrupts.
 
 ## 7. Motion
 
-150–200 ms fade-through between routes, 120 ms press scale, snackbar slide-up. The
-angle never animates while it is being read; no counting numbers. Reduced motion
-collapses every transition to a cut.
+Route changes cut the next screen in behind a 400 ms blade: a 14% slant, a 2 px
+steel rim, and the knife's angle carried between its row and the hero. The outgoing
+page never moves; a 120 ms press scale and the snackbar remain.
 
-Two moments earn a longer response, and the gauge carries both:
-
-- **Opening a knife** draws the 10–25° rule, lighting each tick as the sweep passes
-  it, and lands the pip on the angle with a punched witness mark (about half a
-  second). The number itself stays still.
-- **Logging a sharpening** carries the pip from the previous angle to the new one,
-  then rules the new history entry in brass and lets the ink settle to the hairline.
-  The confirmation names what was recorded ("Sharpening logged · 19° per side").
-
-A short haptic answers a library row; a save gets two, the record and the pip
-landing. No confetti, counts, badges or streaks: the acknowledgement is the
-measurement being taken and written down.
+The gauge waits for the cut: opening a knife draws the 10–25° rule and lands the pip
+when the pass ends; a save carries the pip from the old angle and rules the new entry
+in brass. The number never counts. Reduced motion cuts instantly, ceremony at once.
+A short haptic answers a library row; a save gets two, the record and the pip arriving.
 
 ## 8. Boundaries
 
