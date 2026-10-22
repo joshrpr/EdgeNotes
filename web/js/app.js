@@ -583,7 +583,10 @@
       // the ceremony is frozen inside a transition snapshot.
       afterArrival: function () {
         const scale = document.querySelector('.scale[data-gauge]');
-        if (scale) scale.classList.add('has-' + scale.dataset.gauge);
+        if (scale) {
+          scale.classList.add('has-' + scale.dataset.gauge);
+          delete scale.dataset.gauge;
+        }
         const stampedRow = document.querySelector('[data-stamped]');
         if (stampedRow) stampedRow.classList.add('is-stamped');
         // The second tap lands with the pip, one beat after the save itself.
