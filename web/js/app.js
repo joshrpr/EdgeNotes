@@ -32,6 +32,7 @@
 
   const PHOTO_CACHE = new Map();
   const pendingDeletes = new Map();
+  let routeSeq = 0;
   let db = Store.load();
   db.knives = (db.knives || []).map(Core.sanitizeKnife).filter(Boolean);
 
@@ -50,7 +51,9 @@
     strike: null,
     lastHash: null,
     currentPath: null,
-    previousPath: null
+    previousPath: null,
+    passPending: null,
+    passing: false
   };
 
   /* ---------- small helpers ---------- */
@@ -205,6 +208,36 @@
     return { path: path || '/', query: new URLSearchParams(query || '') };
   }
 
+  function buildView(route) {
+    let view = null;
+    let m;
+    if ((m = /^\/$/.exec(route.path))) view = libraryView();
+    else if (route.path === '/new') view = knifeFormView(null);
+    else if ((m = /^\/knife\/([A-Za-z0-9-]+)$/.exec(route.path))) view = knifeView(m[1]);
+    else if ((m = /^\/knife\/([A-Za-z0-9-]+)\/edit$/.exec(route.path))) view = knifeFormView(m[1]);
+    else if ((m = /^\/knife\/([A-Za-z0-9-]+)\/photo$/.exec(route.path))) view = knifeView(m[1], true);
+    else if ((m = /^\/knife\/([A-Za-z0-9-]+)\/log$/.exec(route.path))) view = logView(m[1], null, route.query);
+    else if ((m = /^\/knife\/([A-Za-z0-9-]+)\/log\/([A-Za-z0-9-]+)$/.exec(route.path))) view = logView(m[1], m[2], route.query);
+    return view || notFoundView();
+  }
+
+  // Painting is separate from building so a pass can build the next view first,
+  // while the old DOM is still mounted, then swap it inside the transition.
+  function paint(view, route, wasRouteChange, enter) {
+    app.innerHTML = '<div class="screen' + (enter ? ' enter' : '') + '">' + view.html + '</div>';
+    document.title = (view.title ? view.title + ' - ' : '') + 'Edge Notes';
+    if (view.after) view.after();
+    hydratePhotos(app);
+    renderDialog();
+    state.currentPath = route.path;
+    if (wasRouteChange) window.scrollTo(0, 0);
+  }
+
+  function supportsPass() {
+    return typeof document.startViewTransition === 'function' &&
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
   function render(force) {
     const route = parseRoute();
     const key = route.path + '?' + route.query.toString();
@@ -219,24 +252,38 @@
       if (route.path !== '/new' && !/\/edit$/.test(route.path)) state.form = null;
     }
 
-    let view = null;
-    let m;
-    if ((m = /^\/$/.exec(route.path))) view = libraryView();
-    else if (route.path === '/new') view = knifeFormView(null);
-    else if ((m = /^\/knife\/([A-Za-z0-9-]+)$/.exec(route.path))) view = knifeView(m[1]);
-    else if ((m = /^\/knife\/([A-Za-z0-9-]+)\/edit$/.exec(route.path))) view = knifeFormView(m[1]);
-    else if ((m = /^\/knife\/([A-Za-z0-9-]+)\/photo$/.exec(route.path))) view = knifeView(m[1], true);
-    else if ((m = /^\/knife\/([A-Za-z0-9-]+)\/log$/.exec(route.path))) view = logView(m[1], null, route.query);
-    else if ((m = /^\/knife\/([A-Za-z0-9-]+)\/log\/([A-Za-z0-9-]+)$/.exec(route.path))) view = logView(m[1], m[2], route.query);
+    // The first paint has no page behind it, so it never cuts.
+    const pass = state.currentPath !== null && wasRouteChange && supportsPass() && !state.passing;
+    const fromPath = state.currentPath || '/';
+    const token = wasRouteChange ? ++routeSeq : routeSeq;
 
-    if (!view) { view = notFoundView(); }
-    app.innerHTML = '<div class="screen' + (wasRouteChange ? ' enter' : '') + '">' + view.html + '</div>';
-    document.title = (view.title ? view.title + ' - ' : '') + 'Edge Notes';
-    if (view.after) view.after();
-    hydratePhotos(app);
-    renderDialog();
-    state.currentPath = route.path;
-    if (wasRouteChange) window.scrollTo(0, 0);
+    state.passPending = pass;
+    const view = buildView(route);
+    state.passPending = false;
+
+    function arrive() {
+      if (token === routeSeq && view.afterArrival) view.afterArrival();
+    }
+
+    if (!pass) {
+      paint(view, route, wasRouteChange, wasRouteChange);
+      arrive();
+      return;
+    }
+
+    state.passing = true;
+    document.documentElement.dataset.pass = Route.direction(fromPath, route.path);
+    const transition = document.startViewTransition(function () {
+      paint(view, route, wasRouteChange, false);
+    });
+    // A newer route makes this view's arrival stale, but the transition still
+    // owns data-pass and state.passing until it finishes.
+    function finish() {
+      state.passing = false;
+      delete document.documentElement.dataset.pass;
+      arrive();
+    }
+    transition.finished.then(finish, finish);
   }
 
   /* ---------- library ---------- */
@@ -427,17 +474,12 @@
         '" y2="' + (tall ? 9 : 7.5) + '" stroke="var(--brass)" stroke-opacity=".55" stroke-width="1"/>';
     }
     const cx = x(perSide);
-    let cls = 'scale';
     let travel = 0;
-    if (gauge && gauge.kind === 'travel') {
-      travel = x(gauge.from) - cx;
-      cls += ' has-travel';
-    } else if (gauge) {
-      cls += gauge.kind === 'first' ? ' has-first' : ' has-reading';
-    }
+    if (gauge && gauge.kind === 'travel') travel = x(gauge.from) - cx;
     const pip = '<circle class="pip" cx="' + cx + '" cy="5" r="2.6" fill="var(--brass)"' +
       (travel ? ' style="--travel:' + travel.toFixed(2) + 'px"' : '') + '/>';
-    return '<svg class="' + cls + '" viewBox="0 0 96 10" role="img" aria-label="' +
+    return '<svg class="scale"' + (gauge ? ' data-gauge="' + gauge.kind + '"' : '') +
+      ' viewBox="0 0 96 10" role="img" aria-label="' +
       esc(Core.fmtAngle(perSide)) + ' on a scale from 10 to 25 degrees per side">' +
       '<line class="rail" x1="' + pad + '" y1="5" x2="' + (width - pad) + '" y2="5" stroke="var(--brass)" ' +
       'stroke-opacity=".35" stroke-width="1" pathLength="1"/>' +
@@ -500,8 +542,8 @@
       : '';
     const history = sessions.map(session => {
       const rating = session.rating ? '<span class="s-rating">' + esc(Core.RATINGS[session.rating]) + '</span>' : '';
-      return '<li><button class="session' + (session.id === stamped ? ' is-stamped' : '') +
-        '" type="button" data-act="edit-session" data-session="' +
+      return '<li><button class="session"' + (session.id === stamped ? ' data-stamped' : '') +
+        ' type="button" data-act="edit-session" data-session="' +
         esc(session.id) + '"><span class="date">' + esc(Core.fmtDate(session.date)) + rating + '</span>' +
         '<span class="s-angle">' + Core.fmtAngle(session.angle) + '</span></button></li>';
     }).join('');
@@ -537,7 +579,13 @@
     return {
       title: knife.name,
       html: html,
-      after: function () {
+      // The gauge, the pip and the stamp wait for the cut to finish so none of
+      // the ceremony is frozen inside a transition snapshot.
+      afterArrival: function () {
+        const scale = document.querySelector('.scale[data-gauge]');
+        if (scale) scale.classList.add('has-' + scale.dataset.gauge);
+        const stampedRow = document.querySelector('[data-stamped]');
+        if (stampedRow) stampedRow.classList.add('is-stamped');
         // The second tap lands with the pip, one beat after the save itself.
         if (strike) setTimeout(function () { Native.haptic('land'); }, 500);
       }
