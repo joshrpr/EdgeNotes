@@ -634,6 +634,39 @@ input::placeholder, textarea::placeholder { color: var(--muted); }
    never moves; only the incoming snapshot is clipped. `in` starts with the
    top edge on screen and the bottom still hidden; `out` is its mirror. */
 
+/* The blade is its own named element, so it is painted above both snapshots
+   and its glow is not clipped by the cut. Its bottom sits 14% of the viewport
+   to the left of its top: moving right the top leads, moving left the bottom
+   does. The translate values are the cut's top-edge percentages. */
+.blade {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  view-transition-name: blade;
+}
+:root[data-pass] .blade { opacity: 1; }
+.blade i {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 2px;
+  height: 100%;
+  background: #E8EDF0;
+  transform-origin: 0 0;
+  transform: skewX(-3.7deg);
+  box-shadow: 0 0 2px #fff, 0 0 12px rgba(232, 237, 240, .5);
+}
+::view-transition-group(blade) { animation: none; }
+:root[data-pass="in"]::view-transition-group(blade) {
+  animation: blade-in 400ms cubic-bezier(.22, 1, .36, 1) both;
+}
+:root[data-pass="out"]::view-transition-group(blade) {
+  animation: blade-out 400ms cubic-bezier(.22, 1, .36, 1) both;
+}
+@keyframes blade-in { from { transform: translateX(0); } to { transform: translateX(116%); } }
+@keyframes blade-out { from { transform: translateX(114%); } to { transform: translateX(-2%); } }
+
 @media (prefers-reduced-motion: no-preference) {
   ::view-transition-old(root) { animation: none; }
   ::view-transition-new(root) {
