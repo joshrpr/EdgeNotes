@@ -1,6 +1,6 @@
 # Edge Notes — Design Brief
 
-**Status:** implemented (v2, Honyaki)
+**Status:** implemented (v3, photo-led knife page)
 **Date:** 2026-10-22
 **Sources:** `PRODUCT.md`, `docs/requirements.md`
 **Mode:** Operate — the user came to get a job done at the bench.
@@ -26,11 +26,12 @@ repeat sharpening is logged without typing the angle again.
 ## 3. Selected direction — Honyaki
 
 The world is a hand-forged blade at night: brushed sumi-black steel, a hamon temper
-line, brass for the measurement, and one vermilion chop for a record. The Japanese
-cue comes from the metallurgy, the Mincho lettering and the chop — not from costume:
-no kanji, no blossoms, no rising sun, no faux-wood decoration. On an Operate surface
-the world changes type, light, material and one signature instrument; the one-stack
-navigation, touch sizes and plain voice stay.
+line, brass for the measurement and the one primary action. The knife's own photo
+leads the current edge. The Japanese cue comes from the metallurgy and the Mincho
+lettering — not from costume: no kanji, no blossoms, no rising sun, no faux-wood
+decoration. On an Operate surface the world changes type, light, material and one
+signature instrument; the one-stack navigation, touch sizes and plain voice stay.
+Vermilion was retired on 2026-10-22; no seal, chop or red record mark remains.
 
 ### Palette
 
@@ -49,13 +50,14 @@ navigation, touch sizes and plain voice stay.
 | Brass (angles, primary action) | `#D8A34A` |
 | Brass pressed | `#F2C776` |
 | Steel light | `#C9D5DB` |
-| Seal vermilion (records only) | `#B23A2E` |
+| Vermilion (retired 2026-10-22) | `#B23A2E` |
 | Error | `#F07B62` |
 
-Brass marks the angle and the one primary action, and nothing else. The vermilion
-chop appears only where a sharpening is recorded; it is never decorative. Steel is
-the material, not a third accent. All text pairs used clear 4.5:1 against their
-grounds; quiet labels clear 5:1.
+Brass marks the angle and the one primary action, and nothing else. Vermilion was
+retired on 2026-10-22: no seal, chop or red record mark remains. The functional
+`--error` stays for errors and destructive actions only. Steel is the material, not
+a third accent. All text pairs used clear 4.5:1 against their grounds; quiet labels
+clear 5:1.
 
 ### Type
 
@@ -88,13 +90,14 @@ with a keyboard.
 2 sp radii; one hairline border per plate; 64–84 sp rows, 54 sp photo thumbnails;
 48 sp minimum touch targets with 12 sp gaps; 16 sp gutters; a 640 sp reading column
 on wide screens. Elevation is declared once per element: hairline or shadow, not
-both. The one full-bleed steel band is the last-sharpened certificate.
+both. The one full-bleed image band is the current-edge photo.
 
 ## 4. Structure — one stack
 
-Library → Knife → full-screen Log sheet, with Add/Edit knife and the photo viewer as
-routes. System Back returns one step and is never trapped. No tab bar, no drawer, no
-FAB. The primary action sits in a fixed bottom bar above the Android navigation inset.
+Library → Knife → session detail sheet or full-screen Log sheet, with Add/Edit knife
+and the photo viewer as routes. System Back returns one step and is never trapped.
+No tab bar, no drawer, no FAB. The primary action sits in a fixed bottom bar above
+the Android navigation inset.
 
 ### Library (root)
 
@@ -115,15 +118,27 @@ FAB. The primary action sits in a fixed bottom bar above the Android navigation 
 
 ### Knife
 
-- App bar: back, 40 sp thumbnail, the name in Mincho, overflow (Edit, Delete).
-- Full-bleed **last-sharpened certificate**: label, a small vermilion chop, the
-  angle at 66 sp in brass with "per side", the wedge with "35° included", and the
+- App bar: back, the name in Mincho, overflow (Edit, Delete). No thumbnail; the
+  photo belongs to the edge, not the chrome.
+- **Current edge:** a full-bleed 120 sp photo (masked at the top and bottom) or the
+  house knife in the same frame; the "Current edge" label; the angle at 66 sp in
+  brass with a raised degree and "per side"; the wedge with "35° included"; and the
   relative and exact date. Rating, burr/stropped chips and the note follow on the
-  same steel.
-- History: "Sharpened 4 times · 15°–17.5° per side", then every entry newest first
-  with full date, angle and rating. Tapping an entry opens it for editing.
-- Bottom bar: brass "Sharpen again · 17.5°"; for a knife with no history, the band
-  becomes "Not sharpened yet" and the bar reads "Log first sharpening".
+  same ground, the note capped at 36 ch.
+- History: "Sharpening History" with the session count and "Past range 15°–17.5° per
+  side", then every entry newest first in a three-column grid: full date and rating,
+  the angle with a raised degree, and a chevron. Tapping a row opens the read-only
+  session sheet.
+- Bottom bar: the brass **Log Sharpening** plate with the previous angle; for a knife
+  with no history, the bar reads "Log first sharpening" with no rule or angle.
+
+### Session sheet
+
+- A read-only bottom sheet over the knife page, 78 vh/dvh max, with a 240 ms rise.
+- Date in Mincho, the recorded angle at 48 sp, the included angle, the rating and the
+  burr/stropped chips. The note reads plainly, or "No note recorded for this
+  session." when empty.
+- One full-width steel "Edit sharpening" action opens the existing form pre-filled.
 
 ### Log sheet
 
@@ -151,21 +166,26 @@ title and one brass or danger action.
 
 ## 5. Entry flow
 
-"Sharpen again" opens the sheet pre-filled with the previous angle and today's date,
+"Log Sharpening" opens the sheet pre-filled with the previous angle and today's date,
 without raising the keyboard or stealing focus; Save is the second tap. A first
-sharpening opens the same sheet empty. Editing a past entry opens it pre-filled.
-Deleting an entry closes the sheet and shows Undo; nothing else interrupts.
+sharpening opens the same sheet empty. Tapping a history row opens the read-only
+session sheet; "Edit sharpening" opens the form pre-filled. Deleting an entry closes
+the form and shows Undo; nothing else interrupts.
 
 ## 6. States
 
 - **Empty library:** the house gyuto drawn flat in steel and walnut, "No knives yet",
   one add path in the fixed bar.
-- **No history:** the knife band reads "Not sharpened yet" without a chop; the bar
-  reads "Log first sharpening".
-- **No photo:** the house knife at 36 × 24, never a grey box.
+- **No history:** the current edge shows the house knife and "Not sharpened yet. Log
+  the first angle and it will live here."; the bar reads "Log first sharpening" with
+  no angle.
+- **No photo:** the house knife in the current-edge frame and in place of a missing
+  thumbnail, never a grey box.
+- **Session sheet:** an empty note reads "No note recorded for this session."; the
+  rating and flags are omitted when they were not recorded.
 - **No search matches:** the house gyuto, a line naming the query and a clear action.
-- **Long content:** names ellipsize in one line; notes wrap and the band grows; the
-  app bar title ellipsizes.
+- **Long content:** names ellipsize in one line; notes wrap and the current edge
+  grows; the sheet body scrolls; the app bar title ellipsizes.
 - **Invalid angle:** the wedge collapses to its edge point, reads "No angle yet",
   and Save stays disabled until it is valid.
 - **Restore:** summary counts before applying; result reports added versus already
@@ -180,11 +200,12 @@ and the knife's angle carried between its row and the hero. The outgoing page ne
 moves.
 
 On arrival the hamon draws across the masthead. On the knife page, the true-angle
-wedge draws itself from the edge outward, and a single specular pass crosses the
-steel once. A save redraws the wedge at the new angle, presses a vermilion chop into
-the new history row and rules it in brass; the number never counts. Reduced motion
-cuts instantly and shows the wedge and the chop at rest. A 120 ms press glint, the
-snackbar and the existing haptics remain.
+wedge draws itself from the edge outward; the steel glint and the chop are gone. A
+save redraws the wedge at the new angle; the number never counts. The session sheet
+rises 240 ms from below, and the Log Sharpening plate takes one 460 ms light sweep on
+pointerdown. Reduced motion cuts instantly and shows the wedge at rest; the sheet
+rise and plate sweep are removed. A 120 ms press glint, the snackbar and the existing
+haptics remain.
 
 ## 8. Boundaries
 
