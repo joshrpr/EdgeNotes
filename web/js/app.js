@@ -8,13 +8,19 @@
   const toastEl = document.getElementById('toast');
   const dialogEl = document.getElementById('dialog');
 
+  // The house knife: a gyuto in profile, steel and walnut, with the edge in
+  // brass. It holds the frame wherever a photo is missing.
   const GLYPH =
-    '<svg viewBox="0 0 64 64" width="100%" height="100%" fill="none" stroke="currentColor" ' +
-    'stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">' +
-    '<path d="M3 31h17v12H3a2.5 2.5 0 0 1-2.5-2.5v-7A2.5 2.5 0 0 1 3 31z"/>' +
-    '<path d="M20 31h30c4.5 0 8.5 1.2 11 3.5-8 5.5-24 8.5-41 8.5z"/>' +
-    '<circle cx="9" cy="37" r="1.4" fill="currentColor" stroke="none"/>' +
-    '<circle cx="15" cy="37" r="1.4" fill="currentColor" stroke="none"/></svg>';
+    '<svg viewBox="0 0 64 40" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" ' +
+    'aria-hidden="true" focusable="false">' +
+    '<path d="M3 24 C18 29.5 32 28 44 24.5 L44 10 L42 10 C30 11.5 16 17 3 24 Z" fill="url(#steel-fill)"/>' +
+    '<path d="M3 24 C18 29.5 32 28 44 24.5" fill="none" stroke="#D8A34A" stroke-width="1.3"/>' +
+    '<path d="M5 22.7 C18 27 31 25.5 42 22" fill="none" stroke="#EAF4F8" stroke-opacity=".32" stroke-width=".9"/>' +
+    '<rect x="44" y="12" width="4" height="11" fill="#C79A4E"/>' +
+    '<path d="M48 12.5 L60 14 L60 22 L48 23.5 Z" fill="#4E3527"/>' +
+    '<path d="M48 15 L60 16.6" fill="none" stroke="#C89A6A" stroke-opacity=".35" stroke-width=".9"/>' +
+    '<path d="M60 14 L60 22" stroke="#2A1B13" stroke-width=".9"/>' +
+    '</svg>';
 
   // One drawn icon family: 24 px, 2 px round strokes.
   const ICON_BACK =
@@ -29,6 +35,69 @@
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
     'stroke-linecap="round" aria-hidden="true" focusable="false">' +
     '<path d="M6.5 6.5 17.5 17.5M17.5 6.5 6.5 17.5"/></svg>';
+  const ICON_FIND =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" ' +
+    'stroke-linecap="round" aria-hidden="true" focusable="false">' +
+    '<circle cx="10.5" cy="10.5" r="5.8"/><path d="m15 15 4.3 4.3"/></svg>';
+
+  // The hamon: the temper line along a hand-forged edge. It is drawn once on
+  // each arrival, the way a blade is revealed under the lamp.
+  const HAMON =
+    '<svg class="hamon" viewBox="0 0 390 15" preserveAspectRatio="none" aria-hidden="true" focusable="false">' +
+    '<path class="glow" d="M0 9.5 C22 5.5 40 11 60 8.5 S98 4.5 120 9.5 S158 13.5 180 7.5 ' +
+    'S220 3.5 242 8.5 S278 12.5 300 7.5 S340 4 362 9 S382 7 390 8"/>' +
+    '<path class="line" d="M0 9 C22 5 40 10.5 60 8 S98 4 120 9 S158 13 180 7 ' +
+    'S220 3 242 8 S278 12 300 7 S340 3.5 362 8.5 S382 6.5 390 7.5"/>' +
+    '<path class="ashi" d="M79 7.5l0 3M146 10l0 2.5M213 4.5l0 3M265 9l0 2.5M331 5l0 3M354 8l0 2"/>' +
+    '</svg>';
+
+  // A gyuto in profile, drawn flat: steel, hamon, edge and an octagonal wa
+  // handle. Used only when the library is empty or a search finds nothing.
+  const KNIFE_ART =
+    '<svg class="empty-art" viewBox="0 0 300 96" aria-hidden="true" focusable="false">' +
+    '<defs><linearGradient id="art-steel" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0" stop-color="#5E6E77"/><stop offset=".55" stop-color="#2C3A42"/>' +
+    '<stop offset="1" stop-color="#18232A"/></linearGradient></defs>' +
+    '<path d="M12 57 C76 67 150 65 204 57 L204 28 L196 28 C130 30 62 42 12 57 Z" fill="url(#art-steel)"/>' +
+    '<path d="M14 55 C76 60 142 58 200 51" fill="none" stroke="#E8F2F6" stroke-opacity=".24" stroke-width="1"/>' +
+    '<path d="M12 57 C76 67 150 65 204 57" fill="none" stroke="#D8A34A" stroke-opacity=".9" stroke-width="1.5"/>' +
+    '<path d="M20 54 C62 58 112 57 152 54 S184 52 198 50" fill="none" stroke="#E8F2F6" stroke-opacity=".3" stroke-width="1"/>' +
+    '<rect x="204" y="32" width="10" height="24" fill="#C79A4E"/>' +
+    '<path d="M214 32 L288 37 L288 51 L214 55 Z" fill="#4E3527"/>' +
+    '<path d="M214 37 L288 41" stroke="#C89A6A" stroke-opacity=".4" stroke-width="1"/>' +
+    '<path d="M214 52 L288 48" stroke="#2A1B13" stroke-width="1"/>' +
+    '<path d="M288 37 L288 51" stroke="#2A1B13" stroke-width="1"/>' +
+    '</svg>';
+
+  function seal(cls) {
+    return '<span class="seal' + (cls ? ' ' + cls : '') + '" aria-hidden="true">EN</span>';
+  }
+
+  // Brushed steel is a real surface here, so it is drawn once as irregular
+  // hairlines and shared by the plates. No stripe pattern pretending to be metal.
+  function brushSteel() {
+    try {
+      const size = 256;
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      let seed = 20261022;
+      const rand = function () { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+      for (let y = 0; y < size; y++) {
+        const alpha = 0.0025 + rand() * 0.009;
+        ctx.fillStyle = 'rgba(235, 244, 248, ' + alpha.toFixed(3) + ')';
+        ctx.fillRect(0, y, size, 1);
+        if (rand() > 0.9) {
+          const x = Math.floor(rand() * size);
+          ctx.fillStyle = 'rgba(255, 255, 255, ' + (alpha * 1.6).toFixed(3) + ')';
+          ctx.fillRect(x, y, 8 + Math.floor(rand() * 18), 1);
+        }
+      }
+      document.documentElement.style.setProperty('--brushed', 'url(' + canvas.toDataURL('image/png') + ')');
+    } catch (e) { /* the linear gradient alone carries the surface */ }
+  }
 
   const PHOTO_CACHE = new Map();
   const pendingDeletes = new Map();
@@ -248,12 +317,13 @@
   function prepareCarry(fromPath, toPath) {
     if (!state.passPending) return;
     if (toPath === '/' && /^\/knife\/[A-Za-z0-9-]+$/.test(fromPath)) {
-      const hero = app.querySelector('.card .angle');
+      const hero = app.querySelector('.last .num');
       if (hero) nameCarry(hero);
       return;
     }
     if (state.read && state.read.id) {
-      const row = app.querySelector('a.row[data-knife="' + state.read.id + '"] .row-angle b');
+      const row = app.querySelector('[data-knife="' + state.read.id + '"] .row-angle b, ' +
+        '[data-knife="' + state.read.id + '"] .angle .num');
       if (row && !row.classList.contains('none')) nameCarry(row);
     }
   }
@@ -318,6 +388,51 @@
     transition.finished.then(finish, finish);
   }
 
+  /* ---------- the wedge: the angle, drawn to scale ---------- */
+
+  // A blade's cross-section at the recorded angle. The apex sits on the left;
+  // the two bevels open to the right at one per-side angle each, so the figure
+  // is a true reading and changes shape with the knife. Everything is derived
+  // from the angle, which is why 10° and 25° do not look alike.
+  function wedgeSvg(perSide, opts) {
+    const o = opts || {};
+    const angle = Core.parseAngle(perSide);
+    const t = angle === null ? 0.05 : Math.tan(angle * Math.PI / 180);
+    const run = 88;
+    const half = run * t;
+    const pad = 7;
+    const apexX = 9;
+    const apexY = half + pad;
+    const farX = apexX + run;
+    const bottom = half * 2 + pad;
+    const height = half * 2 + pad * 2;
+    const arm = Math.hypot(run, half);
+    const radius = Math.min(arm * 0.64, 64);
+    const cos = run / arm;
+    const sin = half / arm;
+    const arcX = apexX + radius * cos;
+    const arcY = apexY - radius * sin;
+    const arcY2 = apexY + radius * sin;
+    const label = angle === null
+      ? 'No angle yet'
+      : Core.fmtAngle(angle) + ' per side, ' + Core.fmtIncluded(angle) + ' included';
+    const gauge = o.gauge ? ' data-gauge="' + esc(o.gauge) + '"' : '';
+    return '<svg class="wedge' + (o.live ? ' live' : '') + (angle === null ? ' is-empty' : '') + '"' +
+      gauge + ' viewBox="0 0 104 ' + height.toFixed(1) + '" preserveAspectRatio="xMinYMid meet" ' +
+      'role="img" aria-label="' + esc(label) + '">' +
+      '<g class="body">' +
+      '<path class="fill" d="M' + apexX + ' ' + apexY.toFixed(1) + ' L' + farX + ' ' + pad + ' L' + farX + ' ' + bottom.toFixed(1) + ' Z"/>' +
+      '<line class="axis" x1="' + apexX + '" y1="' + apexY.toFixed(1) + '" x2="' + (farX + 5) + '" y2="' + apexY.toFixed(1) + '"/>' +
+      '<path class="arc" pathLength="1" d="M' + arcX.toFixed(1) + ' ' + arcY.toFixed(1) + ' A' +
+      radius.toFixed(1) + ' ' + radius.toFixed(1) + ' 0 0 1 ' + arcX.toFixed(1) + ' ' + arcY2.toFixed(1) + '"/>' +
+      '<line class="arm upper" pathLength="1" x1="' + apexX + '" y1="' + apexY.toFixed(1) + '" x2="' + farX + '" y2="' + pad + '"/>' +
+      '<line class="arm lower" pathLength="1" x1="' + apexX + '" y1="' + apexY.toFixed(1) + '" x2="' + farX + '" y2="' + bottom.toFixed(1) + '"/>' +
+      '</g>' +
+      '<circle class="edge-glow" cx="' + apexX + '" cy="' + apexY.toFixed(1) + '" r="5.4"/>' +
+      '<circle class="edge" cx="' + apexX + '" cy="' + apexY.toFixed(1) + '" r="2.1"/>' +
+      '</svg>';
+  }
+
   /* ---------- library ---------- */
 
   function rowHtml(knife, carryId) {
@@ -338,36 +453,78 @@
 
   function emptyHtml() {
     if (!db.knives.length) {
-      return '<div class="empty">' + GLYPH + '<h2>No knives yet</h2>' +
+      return '<div class="empty">' + KNIFE_ART + '<h2>No knives yet</h2>' +
         '<p>Add a knife to remember its angle. Everything stays on this phone.</p></div>';
     }
-    return '<div class="empty">' + GLYPH + '<h2>No knives match &ldquo;' + esc(state.query.trim()) + '&rdquo;</h2>' +
+    return '<div class="empty">' + KNIFE_ART + '<h2>No knives match &ldquo;' + esc(state.query.trim()) + '&rdquo;</h2>' +
       '<p>Try a shorter name, or clear the search.</p>' +
       '<button class="btn" type="button" data-act="clear-search">Clear search</button></div>';
+  }
+
+  // The most recently sharpened knife gets the bench: its angle at reading size
+  // and the blade's cross-section drawn at that angle. It is not repeated in
+  // the list below, which keeps the root screen from being a plain feed.
+  function benchHtml(knife, carryId) {
+    const latest = Core.latestSession(knife);
+    if (!latest) return '';
+    const carry = knife.id === carryId
+      ? ' style="view-transition-name:knife-angle" data-vt-angle'
+      : '';
+    return '<section class="bench"><a class="bench-link" href="#/knife/' + encodeURIComponent(knife.id) +
+      '" data-knife="' + esc(knife.id) + '">' +
+      '<span class="bench-top"><span class="label">Last on the bench</span>' + seal('sm') + '</span>' +
+      '<span class="bench-id">' + (knife.photoId ? photoSlot(knife.photoId, 'bench-photo') : '') +
+      '<span class="bench-name">' + esc(knife.name) + '</span></span>' +
+      '<span class="bench-main">' +
+      '<span class="bench-angle"><span class="angle">' +
+      '<span class="num"' + carry + '>' + Core.fmtNum(latest.angle) + '<span class="deg">&deg;</span></span>' +
+      '</span><small>per side</small></span>' +
+      '<span class="bench-figure">' + wedgeSvg(latest.angle) +
+      '<span class="bench-inc">' + Core.fmtIncluded(latest.angle) + ' included</span></span>' +
+      '</span>' +
+      '<span class="bench-when">' + esc(upperFirst(Core.relativeDate(latest.date))) + ' &middot; ' +
+      esc(Core.fmtDate(latest.date)) + '</span>' +
+      '</a></section>';
   }
 
   function listRegion() {
     const knives = Core.searchKnives(db.knives, state.query);
     if (!knives.length) return emptyHtml();
+    const searching = !!state.query.trim();
     // Coming back from a knife, its row's angle is the incoming half of the carry.
     const leaving = state.passPending && state.currentPath
       ? /^\/knife\/([A-Za-z0-9-]+)$/.exec(state.currentPath)
       : null;
     const carryId = leaving ? leaving[1] : null;
-    let html = '<ul class="list">';
-    for (const knife of knives) html += rowHtml(knife, carryId);
-    return html + '</ul>';
+    const top = searching ? null : knives[0];
+    // A never-sharpened knife cannot hold the bench; it stays in the list.
+    const featured = top && Core.latestSession(top) ? top : null;
+    const rest = featured ? knives.slice(1) : knives;
+    let html = featured ? benchHtml(featured, carryId) : '';
+    if (rest.length) {
+      const count = searching
+        ? plural(knives.length, 'match', 'matches')
+        : plural(knives.length, 'knife', 'knives');
+      html += '<div class="rack-head"><span>' + (searching ? 'Matches' : 'Library') +
+        '</span><span class="count">' + esc(count) + '</span></div><ul class="list">';
+      for (const knife of rest) html += rowHtml(knife, carryId);
+      html += '</ul>';
+    }
+    return html;
   }
 
   function libraryView() {
     return {
       title: '',
       html:
-        '<header class="appbar"><h1>Edge Notes</h1></header>' +
+        '<header class="masthead"><div class="appbar"><span class="brand-mark" aria-hidden="true">EN</span>' +
+        '<h1>Edge Notes</h1></div>' + HAMON + '</header>' +
+        '<div class="search"><div class="search-field">' + ICON_FIND +
+        '<input id="search" type="search" placeholder="Find a knife" ' +
+        'aria-label="Search knives" autocomplete="off" value="' + esc(state.query) + '"></div></div>' +
+        '<div class="content">' +
         (state.update && !state.updateDismissed ? updateBar() : '') +
-        '<div class="search"><input id="search" type="search" placeholder="Search knives" ' +
-        'aria-label="Search knives" autocomplete="off" value="' + esc(state.query) + '"></div>' +
-        '<div class="content"><div id="list-region">' + listRegion() + '</div>' + footer() + '</div>' +
+        '<div id="list-region">' + listRegion() + '</div>' + footer() + '</div>' +
         '<div class="actionbar"><a class="btn primary" href="#/new">Add knife</a></div>',
       after: function () {
         const input = document.getElementById('search');
@@ -487,44 +644,15 @@
   function notFoundView() {
     return {
       title: 'Not found',
-      html: '<header class="appbar"><button class="icon-btn" type="button" data-act="back-to-library" ' +
+      html: '<header class="masthead"><div class="appbar"><button class="icon-btn" type="button" data-act="back-to-library" ' +
         'aria-label="Back to library">' + ICON_BACK + '</button>' +
-        '<h1>Not here</h1></header>' +
-        '<div class="empty">' + GLYPH + '<h2>That page is gone</h2><p>The knife may have been deleted.</p>' +
+        '<h1>Not here</h1></div></header>' +
+        '<div class="empty">' + KNIFE_ART + '<h2>That page is gone</h2><p>The knife may have been deleted.</p>' +
         '<a class="btn" href="#/">Back to the library</a></div>'
     };
   }
 
   /* ---------- knife page ---------- */
-
-  // The signature readout: a rule, four ticks and the pip at this angle. When a
-  // knife is opened the rule draws itself; when an angle is struck the pip
-  // travels from the old value to the new one, so the page shows the
-  // measurement instead of today's date.
-  function scaleSvg(perSide, gauge) {
-    const low = 10, high = 25, width = 96, pad = 3;
-    const x = v => pad + (Math.min(high, Math.max(low, v)) - low) / (high - low) * (width - pad * 2);
-    let ticks = '';
-    for (const value of [10, 15, 20, 25]) {
-      const tall = value === 10 || value === 25;
-      // Each tick lights as the rule sweeps past it.
-      const lit = Math.round((x(value) - pad) / (width - pad * 2) * 160);
-      ticks += '<line class="tick" style="animation-delay:' + lit + 'ms" x1="' + x(value) +
-        '" y1="' + (tall ? 1 : 2.5) + '" x2="' + x(value) +
-        '" y2="' + (tall ? 9 : 7.5) + '" stroke="var(--brass)" stroke-opacity=".55" stroke-width="1"/>';
-    }
-    const cx = x(perSide);
-    let travel = 0;
-    if (gauge && gauge.kind === 'travel') travel = x(gauge.from) - cx;
-    const pip = '<circle class="pip" cx="' + cx + '" cy="5" r="2.6" fill="var(--brass)"' +
-      (travel ? ' style="--travel:' + travel.toFixed(2) + 'px"' : '') + '/>';
-    return '<svg class="scale"' + (gauge ? ' data-gauge="' + gauge.kind + '"' : '') +
-      ' viewBox="0 0 96 10" role="img" aria-label="' +
-      esc(Core.fmtAngle(perSide)) + ' on a scale from 10 to 25 degrees per side">' +
-      '<line class="rail" x1="' + pad + '" y1="5" x2="' + (width - pad) + '" y2="5" stroke="var(--brass)" ' +
-      'stroke-opacity=".35" stroke-width="1" pathLength="1"/>' +
-      ticks + (gauge ? '<circle class="punch" cx="' + cx + '" cy="5" r="2.6"/>' : '') + pip + '</svg>';
-  }
 
   function knifeMenu(knife) {
     return '<div class="menu" role="menu">' +
@@ -533,22 +661,25 @@
       '</div>';
   }
 
-  function latestCard(knife, latest, gauge, carry) {
+  function lastSection(latest, gauge, carry) {
     if (!latest) {
-      return '<section class="card"><span class="label">Last sharpened</span>' +
+      return '<section class="last"><div class="last-top"><span class="label">Last sharpened</span></div>' +
         '<p class="note muted">Not sharpened yet. Log the first angle and it will live here.</p></section>';
     }
     const rating = latest.rating ? Core.RATINGS[latest.rating] : '';
     const flags = (latest.burr ? '<span class="flag">Burr raised</span>' : '') +
       (latest.stropped ? '<span class="flag">Stropped</span>' : '');
-    return '<section class="card">' +
-      '<span class="label">Last sharpened</span>' +
-      '<div class="readout"><span class="angle"' +
+    return '<section class="last">' +
+      '<div class="last-top"><span class="label">Last sharpened</span>' + seal() + '</div>' +
+      '<div class="last-main">' +
+      '<span class="angle"><span class="num"' +
       (carry ? ' style="view-transition-name:knife-angle" data-vt-angle' : '') + '>' + Core.fmtNum(latest.angle) +
-      '<span class="deg">&deg;</span></span>' +
-      '<span class="inc">' + Core.fmtIncluded(latest.angle) + ' included</span></div>' +
-      scaleSvg(latest.angle, gauge) +
-      '<div class="when">' + esc(upperFirst(Core.relativeDate(latest.date))) + ' &middot; ' + esc(Core.fmtDate(latest.date)) + '</div>' +
+      '<span class="deg">&deg;</span></span><span class="per">per side</span></span>' +
+      '<span class="last-figure">' + wedgeSvg(latest.angle, { gauge: gauge }) +
+      '<span class="inc">' + Core.fmtIncluded(latest.angle) + ' included</span></span>' +
+      '</div>' +
+      '<p class="last-when"><b>' + esc(upperFirst(Core.relativeDate(latest.date))) + '</b> &middot; ' +
+      esc(Core.fmtDate(latest.date)) + '</p>' +
       (rating || flags ? '<div class="rating-line">' +
         (rating ? '<span>' + esc(rating) + '</span>' : '') + flags + '</div>' : '') +
       (latest.notes ? '<p class="note">' + esc(latest.notes) + '</p>' : '') +
@@ -569,10 +700,10 @@
     state.read = null;
     let gauge = null;
     if (strike && strike.affectsLatest) {
-      if (strike.from === null) gauge = { kind: 'first' };
-      else if (strike.from !== strike.to) gauge = { kind: 'travel', from: strike.from };
+      if (strike.from === null) gauge = 'first';
+      else if (strike.from !== strike.to) gauge = 'travel';
     } else if (reading) {
-      gauge = { kind: 'reading' };
+      gauge = 'read';
     }
     const stamped = strike ? strike.sessionId : null;
     const carry = !!(state.passPending && reading);
@@ -587,10 +718,11 @@
       return '<li><button class="session"' + (session.id === stamped ? ' data-stamped' : '') +
         ' type="button" data-act="edit-session" data-session="' +
         esc(session.id) + '"><span class="date">' + esc(Core.fmtDate(session.date)) + rating + '</span>' +
+        (session.id === stamped ? '<span class="chop" aria-hidden="true">EN</span>' : '') +
         '<span class="s-angle">' + Core.fmtAngle(session.angle) + '</span></button></li>';
     }).join('');
 
-    let html = '<header class="appbar">' +
+    let html = '<header class="masthead"><div class="appbar">' +
       '<button class="icon-btn" type="button" data-act="back-to-library" aria-label="Back to library">' + ICON_BACK + '</button>' +
       (knife.photoId
         ? '<a class="avatar-link" href="#/knife/' + encodeURIComponent(knife.id) + '/photo" aria-label="Open photo">' + photoSlot(knife.photoId, 'avatar') + '</a>'
@@ -599,10 +731,10 @@
       '<button class="icon-btn right" type="button" data-act="menu" aria-label="More options" ' +
       'aria-haspopup="menu" aria-expanded="' + (state.menu ? 'true' : 'false') + '">' + ICON_MORE + '</button>' +
       (state.menu ? knifeMenu(knife) : '') +
-      '</header>' +
+      '</div></header>' +
       '<main class="content">' +
       (state.update && !state.updateDismissed ? updateBar() : '') +
-      latestCard(knife, latest, gauge, carry) +
+      lastSection(latest, gauge, carry) +
       (summary ? '<p class="summary">' + summary + '</p>' : '') +
       (sessions.length ? '<ul class="history">' + history + '</ul>' : '') +
       '</main>' +
@@ -624,15 +756,17 @@
       // The gauge, the pip and the stamp wait for the cut to finish so none of
       // the ceremony is frozen inside a transition snapshot.
       afterArrival: function () {
-        const scale = document.querySelector('.scale[data-gauge]');
-        if (scale) {
-          scale.classList.add('has-' + scale.dataset.gauge);
-          delete scale.dataset.gauge;
+        const wedge = document.querySelector('.last .wedge[data-gauge]');
+        if (wedge) {
+          wedge.classList.add('is-drawn');
+          delete wedge.dataset.gauge;
+          const last = document.querySelector('.last');
+          if (last) last.classList.add('has-glint');
         }
         const stampedRow = document.querySelector('[data-stamped]');
         if (stampedRow) stampedRow.classList.add('is-stamped');
-        // The second tap lands with the pip, one beat after the save itself.
-        if (strike) setTimeout(function () { Native.haptic('land'); }, 500);
+        // The second tap lands with the chop, one beat after the save itself.
+        if (strike) setTimeout(function () { Native.haptic('land'); }, 420);
       }
     };
   }
@@ -674,16 +808,19 @@
         '" aria-pressed="' + (draft.rating === n) + '"><span class="n">' + n + '</span>' + esc(label) + '</button>';
     }).join('');
 
-    const html = '<header class="appbar">' +
+    const html = '<header class="masthead"><div class="appbar">' +
       '<button class="icon-btn" type="button" data-act="back-to-knife" aria-label="Back to knife">' + ICON_BACK + '</button>' +
-      '<h1>' + (existing ? 'Edit sharpening' : 'Log sharpening') + '</h1></header>' +
+      '<h1>' + (existing ? 'Edit sharpening' : 'Log sharpening') + '</h1></div></header>' +
       '<form class="form" id="session-form" novalidate>' +
       '<label class="field"><span class="label">Date</span>' +
       '<input id="f-date" type="date" value="' + esc(draft.date) + '" max="' + today + '" required></label>' +
       '<div class="field"><label class="label" for="f-angle">Angle per side</label>' +
-      '<div class="angle-row"><input class="input" id="f-angle" type="text" inputmode="decimal" ' +
-      'autocomplete="off" placeholder="e.g. 17.5" value="' + esc(draft.angle) + '" aria-describedby="f-angle-hint"></div>' +
-      '<span class="inc" id="f-included">' + (parsed === null ? 'No angle yet' : Core.fmtIncluded(parsed) + ' included') + '</span>' +
+      '<div class="measure">' +
+      '<input class="input" id="f-angle" type="text" inputmode="decimal" ' +
+      'autocomplete="off" placeholder="17.5" value="' + esc(draft.angle) + '" aria-describedby="f-angle-hint">' +
+      '<span class="measure-figure">' + wedgeSvg(parsed, { live: true }) +
+      '<span class="inc" id="f-included">' + (parsed === null ? 'No angle yet' : Core.fmtIncluded(parsed) + ' included') + '</span></span>' +
+      '</div>' +
       '<span class="hint" id="f-angle-hint">1&ndash;45&deg; per side. A comma works too.</span></div>' +
       '<div class="field"><span class="label">How did it cut?</span><div class="ratings">' + ratingRows + '</div></div>' +
       '<div class="switches">' +
@@ -720,8 +857,10 @@
     draft.angle = input.value;
     const angle = Core.parseAngle(input.value);
     const included = document.getElementById('f-included');
+    const wedge = document.querySelector('.measure-figure .wedge');
     const save = document.getElementById('f-save');
     const error = document.getElementById('f-error');
+    if (wedge) wedge.outerHTML = wedgeSvg(angle, { live: true });
     if (included) included.textContent = angle === null ? 'No angle yet' : Core.fmtIncluded(angle) + ' included';
     if (save) save.disabled = angle === null;
     if (error && angle !== null) error.hidden = true;
@@ -868,9 +1007,9 @@
     else preview = '<span class="preview">' + GLYPH + '</span>';
     const hasPhoto = !!f.pending || (!!f.photoId && !f.remove);
 
-    const html = '<header class="appbar">' +
+    const html = '<header class="masthead"><div class="appbar">' +
       '<button class="icon-btn" type="button" data-act="close-knife-form" aria-label="Back">' + ICON_BACK + '</button>' +
-      '<h1>' + (existing ? 'Edit knife' : 'New knife') + '</h1></header>' +
+      '<h1>' + (existing ? 'Edit knife' : 'New knife') + '</h1></div></header>' +
       '<form class="form" id="knife-form" novalidate>' +
       '<label class="field"><span class="label">Name</span>' +
       '<input id="k-name" type="text" maxlength="80" autocomplete="off" placeholder="Chef&rsquo;s knife" ' +
@@ -1157,7 +1296,7 @@
     }
     // A library row is a plain link, so it keeps its own navigation; this only
     // records that a knife was picked and answers with a tap under the thumb.
-    const row = event.target.closest ? event.target.closest('a.row') : null;
+    const row = event.target.closest ? event.target.closest('a[data-knife]') : null;
     if (row) {
       const opened = /^#\/knife\/([A-Za-z0-9-]+)$/.exec(row.getAttribute('href') || '');
       if (opened) state.read = { id: opened[1], at: Date.now() };
@@ -1304,6 +1443,7 @@
   }
 
   function init() {
+    brushSteel();
     if (!location.hash) history.replaceState(null, '', '#/');
     document.addEventListener('click', onClick);
     document.addEventListener('keydown', onKeydown);

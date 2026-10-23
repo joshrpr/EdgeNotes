@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kuro-uchi · knife detail</title>
+<link rel="stylesheet" href="proto.css">
+<style>
+  .pa.photo-study { background: #080b0c; }
+  .photo-study ::selection { background: rgba(216, 163, 74, .22); color: var(--text); }
+
+  /* fixed chrome + a scrolling record */
+  .photo-study .screen { display: flex; flex-direction: column; }
+  .photo-study .k-bar {
+    flex: 0 0 54px;
+    margin: 0;
+    padding: 0 8px;
+    background: #080b0c;
+  }
+  .photo-study .k-bar .title { margin-left: 2px; }
+  .photo-study .k-body {
+    flex: 1;
+    min-height: 0;
+    height: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+    padding: 0 16px 104px;
+  }
+  .photo-study .k-body::-webkit-scrollbar { display: none; }
+  .photo-study .bottom { padding-bottom: max(22px, env(safe-area-inset-bottom)); }
+
+  .photo-study .k-hero { padding-top: 12px; }
+  .photo-study .k-head { justify-content: flex-start; }
+  .photo-study .k-head .label { color: #93a5a9; font-size: 10px; }
+
+  /* photograph: full bleed, soft edges, no overlay type */
+  .photo-study .k-art.photo {
+    height: 120px;
+    margin: 8px -16px 0;
+    padding: 0;
+    overflow: hidden;
+    background: #080b0c;
+    -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 15%, #000 85%, transparent 100%);
+    mask-image: linear-gradient(180deg, transparent 0%, #000 15%, #000 85%, transparent 100%);
+  }
+  .photo-study .k-art.photo img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 50%;
+  }
+  .photo-study .k-art.photo .k-photo-empty {
+    position: absolute;
+    inset: 0;
+    display: none;
+    place-items: center;
+    margin: 0;
+    color: var(--quiet);
+    font-family: var(--sans);
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+  .photo-study .k-art.photo.is-missing img { display: none; }
+  .photo-study .k-art.photo.is-missing .k-photo-empty { display: grid; }
+
+  /* angle + certificate */
+  .photo-study .k-cert { border-top-color: var(--line-hi); }
+  .photo-study .k-angle .deg {
+    margin-left: -.28em;
+    font-size: .31em;
+    letter-spacing: 0;
+    vertical-align: 1.62em;
+  }
+  .photo-study .k-per { color: #93a5a9; font-size: 10px; }
+  .photo-study .k-when { color: var(--muted); }
+  .photo-study .k-when b { color: var(--text); }
+  .photo-study .k-note { color: var(--muted); max-width: 36ch; }
+
+  /* history */
+  .photo-study .k-history-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line-hi);
+  }
+  .photo-study .k-history-title {
+    font-family: var(--serif);
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -.01em;
+    line-height: 1.15;
+  }
+  .photo-study .k-history-count {
+    color: var(--muted);
+    font-family: var(--sans);
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .photo-study .k-range {
+    margin: 4px 0 2px;
+    color: #93a5a9;
+    font-size: 11px;
+    line-height: 1.45;
+  }
+  .photo-study .k-history { margin-top: 0; }
+  .photo-study .k-row {
+    grid-template-columns: 1fr auto 12px;
+    width: 100%;
+    padding: 12px 0;
+    border: 0;
+    border-top: 1px solid var(--line);
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    appearance: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color .12s ease;
+  }
+  .photo-study .k-row:active { background: rgba(255, 255, 255, .025); }
+  .photo-study .k-row:focus-visible { outline: 1px solid var(--brass); outline-offset: -1px; }
+  .photo-study .k-row .d { color: var(--text); font-size: 12.5px; font-weight: 400; }
+  .photo-study .k-row .d small { color: var(--quiet); font-size: 10.5px; }
+  .photo-study .k-row .a {
+    color: var(--brass);
+    font-family: var(--serif);
+    font-size: 23px;
+    font-weight: 600;
+    line-height: 1;
+  }
+  .photo-study .k-row .a .row-deg {
+    margin-left: .02em;
+    font-size: .55em;
+    letter-spacing: 0;
+    vertical-align: .4em;
+  }
+  .photo-study .k-row .chev {
+    width: 12px;
+    height: 12px;
+    fill: none;
+    stroke: var(--quiet);
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  /* session detail sheet */
+  .photo-study .sheet-scrim {
+    position: absolute;
+    inset: 0;
+    z-index: 9;
+    background: rgba(3, 6, 7, .62);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .24s ease, visibility .24s ease;
+  }
+  .photo-study .sheet-scrim.is-open { opacity: 1; visibility: visible; }
+  .photo-study .k-sheet {
+    position: absolute;
+    z-index: 10;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    max-height: 78%;
+    border-top: 1px solid var(--line-hi);
+    border-radius: 14px 14px 0 0;
+    background: linear-gradient(180deg, #121b1e 0%, #0b1113 72%);
+    box-shadow: 0 -24px 48px -12px rgba(0, 0, 0, .65);
+    color: var(--text);
+    transform: translateY(102%);
+    visibility: hidden;
+    transition: transform .32s cubic-bezier(.2, .8, .2, 1), visibility .32s;
+  }
+  .photo-study .k-sheet.is-open { transform: translateY(0); visibility: visible; }
+  .photo-study .sheet-handle {
+    flex: none;
+    width: 36px;
+    height: 3px;
+    margin: 10px auto 0;
+    border-radius: 2px;
+    background: #3a4d52;
+  }
+  .photo-study .sheet-head {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 4px 12px 0 20px;
+  }
+  .photo-study .sheet-head .label { color: #93a5a9; font-size: 10px; }
+  .photo-study .sheet-close { width: 44px; height: 44px; margin-right: -8px; color: var(--muted); }
+  .photo-study .sheet-close .ico { width: 18px; height: 18px; }
+  .photo-study .sheet-body {
+    min-height: 0;
+    overflow-y: auto;
+    padding: 0 20px calc(24px + env(safe-area-inset-bottom));
+    scrollbar-width: none;
+  }
+  .photo-study .sheet-body::-webkit-scrollbar { display: none; }
+  .photo-study .sheet-date {
+    margin-top: 2px;
+    font-family: var(--serif);
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -.01em;
+    line-height: 1.2;
+  }
+  .photo-study .sheet-angle {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-top: 12px;
+    color: var(--brass);
+    font-family: var(--serif);
+    font-weight: 600;
+  }
+  .photo-study .sheet-num { font-size: 48px; letter-spacing: -.03em; line-height: .9; }
+  .photo-study .sheet-num .sheet-deg {
+    margin-left: -.2em;
+    font-size: .32em;
+    letter-spacing: 0;
+    vertical-align: 1.55em;
+  }
+  .photo-study .sheet-per {
+    color: var(--quiet);
+    font-family: var(--sans);
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+  .photo-study .sheet-meta {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 12px;
+    padding: 10px 0 9px;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 11.5px;
+  }
+  .photo-study .sheet-type { color: var(--text); }
+  .photo-study .sheet-note {
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: 12.5px;
+    line-height: 1.6;
+  }
+  .photo-study .sheet-note.is-empty { color: var(--quiet); font-size: 11.5px; }
+
+  body[data-solo] { background: #080b0c; }
+  body[data-solo] .photo-study .k-history-title,
+  body[data-solo] .photo-study .sheet-date { display: block; }
+</style>
+</head>
+<body data-solo="photo">
+
+<svg width="0" height="0" aria-hidden="true" style="position:absolute">
+  <defs>
+    <symbol id="wedge" viewBox="0 0 110 90">
+      <path d="M9 45 L91.2 13.5 L91.2 76.5 Z" fill="var(--steel)" opacity=".05"/>
+      <path d="M9 45 L91.2 13.5" fill="none" stroke="var(--steel)" stroke-width="1.2" stroke-linecap="round"/>
+      <path d="M9 45 L91.2 76.5" fill="none" stroke="var(--brass)" stroke-width="1.2" stroke-linecap="round"/>
+      <path d="M46.3 30.7 A40 40 0 0 1 46.3 59.3" fill="none" stroke="var(--brass)" stroke-width="1"/>
+      <path d="M9 45 L102 45" fill="none" stroke="var(--steel)" stroke-width=".7" stroke-dasharray="2 4" opacity=".45"/>
+      <circle cx="9" cy="45" r="1.9" fill="var(--brass)"/>
+    </symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M15.2 4.5 7.7 12l7.5 7.5"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24">
+      <circle cx="5.2" cy="12" r="1.35" fill="currentColor" stroke="none"/>
+      <circle cx="12" cy="12" r="1.35" fill="currentColor" stroke="none"/>
+      <circle cx="18.8" cy="12" r="1.35" fill="currentColor" stroke="none"/>
+    </symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+  </defs>
+</svg>
+
+<main class="directions">
+  <section class="direction is-solo" id="d-photo">
+    <div class="phone pa photo-study">
+      <div class="status"><span>8:18</span><span class="sys"><span class="bars"><b></b><b></b><b></b><b></b></span><span class="batt"></span></span></div>
+      <div class="screen">
+        <header class="k-bar">
+          <button class="iconbtn" type="button" aria-label="Back"><svg class="ico" viewBox="0 0 24 24"><use href="#i-back"/></svg></button>
+          <span class="title">Gallery Knife</span>
+          <button class="iconbtn" type="button" aria-label="More options"><svg class="ico" viewBox="0 0 24 24"><use href="#i-more"/></svg></button>
+        </header>
+
+        <div class="k-body">
+          <section class="k-hero">
+            <div class="k-head"><span class="label">Current edge</span></div>
+
+            <div class="k-art photo">
+              <img src="art/knife-hero.jpg" width="1600" height="475" alt="A dark-forged gyuto with a wooden handle on a black surface">
+              <p class="k-photo-empty">No photo</p>
+            </div>
+
+            <div class="k-cert">
+              <div>
+                <span class="k-angle">21<span class="deg">°</span></span>
+                <span class="k-per">per side</span>
+              </div>
+              <div class="k-fig">
+                <svg viewBox="0 0 110 90" role="img" aria-label="21 degrees per side, 42 degrees included"><use href="#wedge"/></svg>
+                <span class="inc">42° included</span>
+              </div>
+              <div class="k-when"><span><b>Last sharpened</b> · Today, 22 Oct 2026</span></div>
+            </div>
+
+            <p class="k-note">Finished on a 3k stone, stropped once on leather.</p>
+
+            <div class="k-history-head">
+              <h2 class="k-history-title">Sharpening History</h2>
+              <span class="k-history-count">3 sessions</span>
+            </div>
+            <p class="k-range">Past range 17.5°–21° per side</p>
+
+            <div class="k-history">
+              <button class="k-row" type="button" aria-haspopup="dialog"
+                data-date="22 Oct 2026" data-angle="21" data-included="42"
+                data-note="Finished on a 3k stone, stropped once on leather.">
+                <span class="d">22 Oct 2026</span>
+                <span class="a">21<span class="row-deg">°</span></span>
+                <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chev"/></svg>
+              </button>
+
+              <button class="k-row" type="button" aria-haspopup="dialog"
+                data-date="21 Oct 2026" data-angle="19" data-included="38">
+                <span class="d">21 Oct 2026</span>
+                <span class="a">19<span class="row-deg">°</span></span>
+                <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chev"/></svg>
+              </button>
+
+              <button class="k-row" type="button" aria-haspopup="dialog"
+                data-date="21 Oct 2026" data-angle="17.5" data-included="35" data-type="Working edge">
+                <span class="d">21 Oct 2026<small>Working edge</small></span>
+                <span class="a">17.5<span class="row-deg">°</span></span>
+                <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chev"/></svg>
+              </button>
+            </div>
+          </section>
+        </div>
+
+        <div class="bottom">
+          <button class="btn btn-plate" type="button" aria-label="Log sharpening at 21 degrees per side">
+            <span class="plate-label">Log Sharpening</span>
+            <span class="plate-rule" aria-hidden="true"></span>
+            <span class="plate-angle">21<span class="plate-deg">°</span></span>
+          </button>
+        </div>
+
+        <div class="sheet-scrim" aria-hidden="true"></div>
+        <aside class="k-sheet" role="dialog" aria-modal="true" aria-labelledby="session-title" aria-hidden="true">
+          <div class="sheet-handle" aria-hidden="true"></div>
+          <div class="sheet-head">
+            <span class="label">Sharpening session</span>
+            <button class="iconbtn sheet-close" type="button" aria-label="Close session details">
+              <svg class="ico" viewBox="0 0 24 24"><use href="#i-close"/></svg>
+            </button>
+          </div>
+          <div class="sheet-body">
+            <h2 class="sheet-date" id="session-title">22 Oct 2026</h2>
+            <div class="sheet-angle">
+              <span class="sheet-num">21<span class="sheet-deg">°</span></span>
+              <span class="sheet-per">per side</span>
+            </div>
+            <div class="sheet-meta">
+              <span class="sheet-inc">42° included</span>
+              <span class="sheet-type"></span>
+            </div>
+            <p class="sheet-note">Finished on a 3k stone, stropped once on leather.</p>
+          </div>
+        </aside>
+      </div>
+      <div class="home"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+  (() => {
+    const plate = document.querySelector('.btn-plate');
+    if (plate) {
+      plate.addEventListener('pointerdown', () => {
+        plate.classList.remove('is-sweeping');
+        void plate.offsetWidth;
+        plate.classList.add('is-sweeping');
+      });
+      plate.addEventListener('animationend', (event) => {
+        if (event.animationName === 'plate-sweep') plate.classList.remove('is-sweeping');
+      });
+    }
+
+    const photo = document.querySelector('.k-art.photo');
+    const photoImg = photo?.querySelector('img');
+    const markMissing = () => photo?.classList.add('is-missing');
+    photoImg?.addEventListener('error', markMissing);
+    if (photoImg?.complete && photoImg.naturalWidth === 0) markMissing();
+
+    const sheet = document.querySelector('.k-sheet');
+    const scrim = document.querySelector('.sheet-scrim');
+    const rows = [...document.querySelectorAll('.k-row')];
+    const closeBtn = document.querySelector('.sheet-close');
+    const header = document.querySelector('.k-bar');
+    const body = document.querySelector('.k-body');
+    const bottom = document.querySelector('.bottom');
+    const title = document.querySelector('#session-title');
+    const num = document.querySelector('.sheet-num');
+    const inc = document.querySelector('.sheet-inc');
+    const type = document.querySelector('.sheet-type');
+    const note = document.querySelector('.sheet-note');
+    const sheetBody = document.querySelector('.sheet-body');
+    let lastRow = null;
+
+    if (!sheet || !scrim || !rows.length) return;
+
+    const open = (row) => {
+      lastRow = row;
+      const d = row.dataset;
+      title.textContent = d.date;
+      num.replaceChildren(
+        document.createTextNode(d.angle),
+        Object.assign(document.createElement('span'), { className: 'sheet-deg', textContent: '°' })
+      );
+      inc.textContent = d.included + '° included';
+      type.textContent = d.type || '';
+      note.textContent = d.note || 'No note recorded for this session.';
+      note.classList.toggle('is-empty', !d.note);
+      sheetBody.scrollTop = 0;
+      sheet.classList.add('is-open');
+      scrim.classList.add('is-open');
+      sheet.setAttribute('aria-hidden', 'false');
+      header.inert = true;
+      body.inert = true;
+      bottom.inert = true;
+      closeBtn.focus();
+    };
+
+    const closeSheet = () => {
+      sheet.classList.remove('is-open');
+      scrim.classList.remove('is-open');
+      sheet.setAttribute('aria-hidden', 'true');
+      header.inert = false;
+      body.inert = false;
+      bottom.inert = false;
+      lastRow?.focus();
+    };
+
+    rows.forEach((row) => row.addEventListener('click', () => open(row)));
+    closeBtn.addEventListener('click', closeSheet);
+    scrim.addEventListener('click', closeSheet);
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && sheet.classList.contains('is-open')) closeSheet();
+    });
+  })();
+</script>
+
+</body>
+</html>

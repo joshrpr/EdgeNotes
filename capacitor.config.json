@@ -2,9 +2,9 @@
   "appId": "com.joshrpr.edgenotes",
   "appName": "Edge Notes",
   "webDir": "web",
-  "backgroundColor": "#0F1214",
+  "backgroundColor": "#090D10",
   "android": {
-    "backgroundColor": "#0F1214"
+    "backgroundColor": "#090D10"
   },
   "plugins": {
     "SystemBars": {

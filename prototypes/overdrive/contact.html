@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Edge Notes — three knife pages</title>
+<style>
+  @font-face {
+    font-family: "Shippori Mincho";
+    src: url("fonts/ShipporiMincho-600-latin.woff2") format("woff2");
+    font-weight: 600;
+    font-display: swap;
+  }
+  :root {
+    --serif: "Shippori Mincho", "Yu Mincho", Georgia, serif;
+    --sans: Roboto, system-ui, "Segoe UI", sans-serif;
+    --mono: "Cascadia Mono", ui-monospace, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #08090a;
+    color: #e9e4d9;
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  .sheet { max-width: 1360px; margin: 0 auto; padding: 46px 40px 40px; }
+  h1 {
+    margin: 0;
+    font-family: var(--serif);
+    font-size: 34px;
+    font-weight: 600;
+    letter-spacing: -.018em;
+    line-height: 1;
+  }
+  .sub {
+    margin-top: 10px;
+    color: #9e978b;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+  .row { display: flex; gap: 26px; align-items: flex-start; margin-top: 30px; }
+  figure { flex: 1 1 0; min-width: 0; margin: 0; }
+  figcaption {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #2b2a25;
+    color: #e9e4d9;
+    font-family: var(--serif);
+    font-size: 18px;
+    font-weight: 600;
+  }
+  figcaption span {
+    color: #8c8578;
+    font-family: var(--mono);
+    font-size: 8.5px;
+    font-weight: 400;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  img { display: block; width: 100%; height: auto; border-radius: 18px; }
+  .note { margin-top: 8px; color: #8c8578; font-size: 11px; line-height: 1.45; }
+</style>
+</head>
+<body>
+<main class="sheet">
+  <h1>Three directions, one knife page</h1>
+  <p class="sub">Edge Notes · 390 × 844 · sample data · prototype only</p>
+  <div class="row">
+    <figure>
+      <img src="shots/a.png" alt="Kuro-uchi knife page with a drawn gyuto and 21 degree certificate">
+      <figcaption>Kuro-uchi <span>the blade</span></figcaption>
+      <p class="note">The knife carries the page. Lowest risk, strongest at-a-glance read.</p>
+    </figure>
+    <figure>
+      <img src="shots/b.png" alt="The stone knife page with a gyuto on a wet whetstone">
+      <figcaption>The stone <span>the instrument</span></figcaption>
+      <p class="note">The stone becomes the page. The log sheet is where this one comes alive.</p>
+    </figure>
+    <figure>
+      <img src="shots/c.png" alt="The forge knife page with a red-hot blade above the quench trough">
+      <figcaption>The forge <span>the moment</span></figcaption>
+      <p class="note">The save is the show. The most cinematic, and the easiest to overdo.</p>
+    </figure>
+  </div>
+</main>
+</body>
+</html>
