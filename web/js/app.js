@@ -783,9 +783,14 @@
       lastSection(knife, latest, gauge, carry) +
       (sessions.length ? historyHead(info) + '<ul class="history">' + history + '</ul>' : '') +
       '</main>' +
-      '<div class="actionbar"><a class="btn primary" href="#/knife/' + encodeURIComponent(knife.id) + '/log' +
-      (latest ? '?angle=' + encodeURIComponent(Core.fmtNum(latest.angle)) : '') + '">' +
-      (latest ? 'Sharpen again &middot; ' + Core.fmtAngle(latest.angle) : 'Log first sharpening') + '</a></div>';
+      '<div class="actionbar"><a class="btn primary' + (latest ? ' plate' : '') + '" href="#/knife/' + encodeURIComponent(knife.id) + '/log' +
+      (latest ? '?angle=' + encodeURIComponent(Core.fmtNum(latest.angle)) : '') + '"' +
+      (latest ? ' aria-label="Log sharpening at ' + Core.fmtNum(latest.angle) + ' degrees per side"' : '') + '>' +
+      (latest
+        ? '<span class="plate-label">Log Sharpening</span>' +
+          '<span class="plate-rule" aria-hidden="true"></span>' +
+          '<span class="plate-angle">' + Core.fmtNum(latest.angle) + '<span class="plate-deg">&deg;</span></span>'
+        : 'Log first sharpening') + '</a></div>';
 
     if (viewer && knife.photoId) {
       // The glyph holds the frame until the stored photo loads, so the viewer
@@ -805,6 +810,17 @@
         if (wedge) {
           wedge.classList.add('is-drawn');
           delete wedge.dataset.gauge;
+        }
+        const plate = document.querySelector('.actionbar .plate');
+        if (plate) {
+          plate.addEventListener('pointerdown', function () {
+            plate.classList.remove('is-sweeping');
+            void plate.offsetWidth;
+            plate.classList.add('is-sweeping');
+          });
+          plate.addEventListener('animationend', function (event) {
+            if (event.animationName === 'plate-sweep') plate.classList.remove('is-sweeping');
+          });
         }
         // The second tap lands with the drop, one beat after the save itself.
         if (strike) setTimeout(function () { Native.haptic('land'); }, 420);
