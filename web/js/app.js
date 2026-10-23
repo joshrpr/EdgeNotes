@@ -73,10 +73,6 @@
     '<path d="M288 37 L288 51" stroke="#2A1B13" stroke-width="1"/>' +
     '</svg>';
 
-  function seal(cls) {
-    return '<span class="seal' + (cls ? ' ' + cls : '') + '" aria-hidden="true">EN</span>';
-  }
-
   // Brushed steel is a real surface here, so it is drawn once as irregular
   // hairlines and shared by the plates. No stripe pattern pretending to be metal.
   function brushSteel() {
@@ -483,7 +479,7 @@
       : '';
     return '<section class="bench"><a class="bench-link" href="#/knife/' + encodeURIComponent(knife.id) +
       '" data-knife="' + esc(knife.id) + '">' +
-      '<span class="bench-top"><span class="label">Last on the bench</span>' + seal('sm') + '</span>' +
+      '<span class="bench-top"><span class="label">Last on the bench</span></span>' +
       '<span class="bench-id">' + (knife.photoId ? photoSlot(knife.photoId, 'bench-photo') : '') +
       '<span class="bench-name">' + esc(knife.name) + '</span></span>' +
       '<span class="bench-main">' +

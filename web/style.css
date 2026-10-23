@@ -1,6 +1,6 @@
 /* Edge Notes — Honyaki: a blade under a workshop lamp.
-   Sumi-black steel, a hamon temper line, brass for the measurement, one
-   vermilion chop for a record. Type is Mincho for the blade's voice and
+   Sumi-black steel, a hamon temper line, brass for the measurement.
+   Type is Mincho for the blade's voice and
    system sans for everything that must be scanned at the bench. */
 
 @font-face {
@@ -37,7 +37,6 @@
   --quiet: #7E8D94;
   --brass: #D8A34A;
   --brass-hi: #F2C776;
-  --seal: #B23A2E;
   --steel: #C9D5DB;
   --error: #F07B62;
   --radius: 2px;
@@ -127,22 +126,6 @@ h1, h2, h3, p { margin: 0; }
   text-indent: .14em;
   box-shadow: inset 0 0 0 2px rgba(216, 163, 74, .06);
 }
-.brand-mark.vermilion { border-color: var(--seal); color: #F4E4D9; background: var(--seal); letter-spacing: .1em; text-indent: .1em; box-shadow: none; }
-.seal {
-  flex: none;
-  width: 22px;
-  height: 22px;
-  display: grid;
-  place-items: center;
-  background: var(--seal);
-  border-radius: 1px;
-  color: #F6E7DC;
-  font: 600 6.5px/1 var(--ui);
-  letter-spacing: .08em;
-  text-indent: .08em;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12);
-}
-.seal.sm { width: 20px; height: 20px; font-size: 6px; }
 
 /* The hamon: the temper line that separates this app from a generic dark list. */
 .hamon {
@@ -1102,7 +1085,6 @@ body.modal-open { overflow: hidden; }
 /* ---------- icons and details ---------- */
 
 .thumb svg { width: 36px; height: 24px; }
-.avatar svg { width: 26px; height: 18px; }
 .preview svg { width: 48px; height: 32px; }
 .viewer-photo > svg { width: 92px; height: 58px; }
 .field .inc { display: block; margin-top: 8px; font-size: 14px; color: var(--muted); }
