@@ -156,3 +156,9 @@ test('builds a backup with the expected envelope', () => {
   assert.strictEqual(out.knives.length, 1);
   assert.ok(out.photos.p);
 });
+
+test('writes the range of a knife history', () => {
+  assert.strictEqual(C.rangeText(17.5, 21), 'Past range 17.5°–21° per side');
+  assert.strictEqual(C.rangeText(21, 21), 'Past range 21° per side');
+  assert.strictEqual(C.rangeText(null, null), '');
+});

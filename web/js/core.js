@@ -28,6 +28,11 @@ const Core = (() => {
   const fmtAngle = perSide => fmtNum(perSide) + '°';
   const fmtIncluded = perSide => fmtNum(included(perSide)) + '°';
   const angleText = perSide => fmtAngle(perSide) + ' per side · ' + fmtIncluded(perSide) + ' included';
+  function rangeText(min, max) {
+    if (min === null || min === undefined || max === null || max === undefined) return '';
+    if (min === max) return 'Past range ' + fmtAngle(min) + ' per side';
+    return 'Past range ' + fmtNum(min) + '°–' + fmtAngle(max) + ' per side';
+  }
 
   /* ---------- dates ---------- */
 
@@ -285,7 +290,7 @@ const Core = (() => {
 
   return {
     RATINGS, MONTHS, MIN_ANGLE, MAX_ANGLE,
-    round1, parseAngle, included, fmtNum, fmtAngle, fmtIncluded, angleText,
+    round1, parseAngle, included, fmtNum, fmtAngle, fmtIncluded, angleText, rangeText,
     todayISO, parseISODate, fmtDate, dayDiff, relativeDate,
     sortSessions, latestSession, sortKnives, normalize, matches, searchKnives, stats,
     validateKnife, validateSession, newId, blankData, sanitizeKnife,
