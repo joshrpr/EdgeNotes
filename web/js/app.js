@@ -35,6 +35,10 @@
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
     'stroke-linecap="round" aria-hidden="true" focusable="false">' +
     '<path d="M6.5 6.5 17.5 17.5M17.5 6.5 6.5 17.5"/></svg>';
+  const ICON_CHEV =
+    '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
+    '<path d="M9 5l7 7-7 7"/></svg>';
   const ICON_FIND =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" ' +
     'stroke-linecap="round" aria-hidden="true" focusable="false">' +
@@ -700,6 +704,12 @@
       '</section>';
   }
 
+  function historyHead(info) {
+    return '<div class="history-head"><h2>Sharpening History</h2>' +
+      '<span class="history-count">' + plural(info.count, 'session', 'sessions') + '</span></div>' +
+      '<p class="history-range">' + esc(Core.rangeText(info.min, info.max)) + '</p>';
+  }
+
   function knifeView(id, viewer) {
     const knife = findKnife(id);
     if (!knife) return notFoundView();
@@ -719,21 +729,13 @@
     } else if (reading) {
       gauge = 'read';
     }
-    const stamped = strike ? strike.sessionId : null;
     const carry = !!(state.passPending && reading);
-    const summary = info.count
-      ? (info.count === 1 ? 'Sharpened once' : 'Sharpened ' + info.count + ' times') +
-        (info.min === info.max
-          ? ' &middot; ' + Core.fmtAngle(info.min) + ' per side'
-          : ' &middot; ' + Core.fmtNum(info.min) + '&deg;&ndash;' + Core.fmtAngle(info.max) + ' per side')
-      : '';
     const history = sessions.map(session => {
       const rating = session.rating ? '<span class="s-rating">' + esc(Core.RATINGS[session.rating]) + '</span>' : '';
-      return '<li><button class="session"' + (session.id === stamped ? ' data-stamped' : '') +
-        ' type="button" data-act="edit-session" data-session="' +
+      return '<li><button class="session" type="button" data-act="edit-session" data-session="' +
         esc(session.id) + '"><span class="date">' + esc(Core.fmtDate(session.date)) + rating + '</span>' +
-        (session.id === stamped ? '<span class="chop" aria-hidden="true">EN</span>' : '') +
-        '<span class="s-angle">' + Core.fmtAngle(session.angle) + '</span></button></li>';
+        '<span class="s-angle">' + Core.fmtNum(session.angle) + '<span class="deg">&deg;</span></span>' +
+        ICON_CHEV + '</button></li>';
     }).join('');
 
     let html = '<header class="masthead knife-head"><div class="appbar">' +
@@ -746,8 +748,7 @@
       '<main class="content">' +
       (state.update && !state.updateDismissed ? updateBar() : '') +
       lastSection(knife, latest, gauge, carry) +
-      (summary ? '<p class="summary">' + summary + '</p>' : '') +
-      (sessions.length ? '<ul class="history">' + history + '</ul>' : '') +
+      (sessions.length ? historyHead(info) + '<ul class="history">' + history + '</ul>' : '') +
       '</main>' +
       '<div class="actionbar"><a class="btn primary" href="#/knife/' + encodeURIComponent(knife.id) + '/log' +
       (latest ? '?angle=' + encodeURIComponent(Core.fmtNum(latest.angle)) : '') + '">' +
@@ -764,17 +765,15 @@
     return {
       title: knife.name,
       html: html,
-      // The gauge, the pip and the stamp wait for the cut to finish so none of
-      // the ceremony is frozen inside a transition snapshot.
+      // The gauge and the pip wait for the cut to finish so none of the
+      // ceremony is frozen inside a transition snapshot.
       afterArrival: function () {
         const wedge = document.querySelector('.last .wedge[data-gauge]');
         if (wedge) {
           wedge.classList.add('is-drawn');
           delete wedge.dataset.gauge;
         }
-        const stampedRow = document.querySelector('[data-stamped]');
-        if (stampedRow) stampedRow.classList.add('is-stamped');
-        // The second tap lands with the chop, one beat after the save itself.
+        // The second tap lands with the drop, one beat after the save itself.
         if (strike) setTimeout(function () { Native.haptic('land'); }, 420);
       }
     };
