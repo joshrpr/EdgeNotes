@@ -209,7 +209,14 @@
       const url = await photoUrl(node.getAttribute('data-photo'));
       if (!url || !node.isConnected || node.dataset.hydrated === url) return;
       if (node.tagName === 'IMG') node.src = url;
-      else node.innerHTML = '<img alt="" src="' + url + '">';
+      else {
+        node.innerHTML = '<img alt="" src="' + url + '">';
+        const img = node.firstElementChild;
+        if (img) img.addEventListener('error', function () {
+          node.innerHTML = GLYPH;
+          node.removeAttribute('data-photo');
+        }, { once: true });
+      }
       node.dataset.hydrated = url;
     }));
   }
@@ -661,16 +668,23 @@
       '</div>';
   }
 
-  function lastSection(latest, gauge, carry) {
+  function edgePhoto(knife) {
+    const frame = photoSlot(knife.photoId, 'edge-photo-frame');
+    if (!knife.photoId) return '<div class="edge-photo is-empty">' + frame + '</div>';
+    return '<a class="edge-photo" href="#/knife/' + encodeURIComponent(knife.id) + '/photo" ' +
+      'aria-label="Open photo of ' + esc(knife.name) + '">' + frame + '</a>';
+  }
+
+  function lastSection(knife, latest, gauge, carry) {
+    const head = '<div class="last-top"><span class="label">Current edge</span></div>' + edgePhoto(knife);
     if (!latest) {
-      return '<section class="last"><div class="last-top"><span class="label">Last sharpened</span></div>' +
+      return '<section class="last">' + head +
         '<p class="note muted">Not sharpened yet. Log the first angle and it will live here.</p></section>';
     }
     const rating = latest.rating ? Core.RATINGS[latest.rating] : '';
     const flags = (latest.burr ? '<span class="flag">Burr raised</span>' : '') +
       (latest.stropped ? '<span class="flag">Stropped</span>' : '');
-    return '<section class="last">' +
-      '<div class="last-top"><span class="label">Last sharpened</span>' + seal() + '</div>' +
+    return '<section class="last">' + head +
       '<div class="last-main">' +
       '<span class="angle"><span class="num"' +
       (carry ? ' style="view-transition-name:knife-angle" data-vt-angle' : '') + '>' + Core.fmtNum(latest.angle) +
@@ -678,8 +692,8 @@
       '<span class="last-figure">' + wedgeSvg(latest.angle, { gauge: gauge }) +
       '<span class="inc">' + Core.fmtIncluded(latest.angle) + ' included</span></span>' +
       '</div>' +
-      '<p class="last-when"><b>' + esc(upperFirst(Core.relativeDate(latest.date))) + '</b> &middot; ' +
-      esc(Core.fmtDate(latest.date)) + '</p>' +
+      '<p class="last-when"><b>Last sharpened</b> &middot; ' +
+      esc(upperFirst(Core.relativeDate(latest.date))) + ', ' + esc(Core.fmtDate(latest.date)) + '</p>' +
       (rating || flags ? '<div class="rating-line">' +
         (rating ? '<span>' + esc(rating) + '</span>' : '') + flags + '</div>' : '') +
       (latest.notes ? '<p class="note">' + esc(latest.notes) + '</p>' : '') +
@@ -722,11 +736,8 @@
         '<span class="s-angle">' + Core.fmtAngle(session.angle) + '</span></button></li>';
     }).join('');
 
-    let html = '<header class="masthead"><div class="appbar">' +
+    let html = '<header class="masthead knife-head"><div class="appbar">' +
       '<button class="icon-btn" type="button" data-act="back-to-library" aria-label="Back to library">' + ICON_BACK + '</button>' +
-      (knife.photoId
-        ? '<a class="avatar-link" href="#/knife/' + encodeURIComponent(knife.id) + '/photo" aria-label="Open photo">' + photoSlot(knife.photoId, 'avatar') + '</a>'
-        : photoSlot(null, 'avatar')) +
       '<span class="title">' + esc(knife.name) + '</span>' +
       '<button class="icon-btn right" type="button" data-act="menu" aria-label="More options" ' +
       'aria-haspopup="menu" aria-expanded="' + (state.menu ? 'true' : 'false') + '">' + ICON_MORE + '</button>' +
@@ -734,7 +745,7 @@
       '</div></header>' +
       '<main class="content">' +
       (state.update && !state.updateDismissed ? updateBar() : '') +
-      lastSection(latest, gauge, carry) +
+      lastSection(knife, latest, gauge, carry) +
       (summary ? '<p class="summary">' + summary + '</p>' : '') +
       (sessions.length ? '<ul class="history">' + history + '</ul>' : '') +
       '</main>' +
@@ -760,8 +771,6 @@
         if (wedge) {
           wedge.classList.add('is-drawn');
           delete wedge.dataset.gauge;
-          const last = document.querySelector('.last');
-          if (last) last.classList.add('has-glint');
         }
         const stampedRow = document.querySelector('[data-stamped]');
         if (stampedRow) stampedRow.classList.add('is-stamped');

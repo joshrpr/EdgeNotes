@@ -46,6 +46,7 @@
   --brushed: none;
   --inset-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
   --inset-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+  --edge: max(16px, calc((100vw - 640px) / 2));
   --shadow-plate: 0 10px 30px rgba(0, 0, 0, .45);
   color-scheme: dark;
 }
@@ -110,6 +111,8 @@ h1, h2, h3, p { margin: 0; }
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.knife-head { background: var(--ground); border-bottom: 1px solid var(--line); box-shadow: none; }
+.knife-head .appbar { height: calc(54px + var(--inset-top)); }
 .brand-mark {
   flex: none;
   width: 30px;
@@ -530,31 +533,6 @@ input:not([type="checkbox"]):focus-visible, textarea:focus-visible {
 
 /* ---------- knife page ---------- */
 
-.avatar-link {
-  flex: none;
-  width: 48px;
-  height: 48px;
-  margin-left: -4px;
-  display: grid;
-  place-items: center;
-  border-radius: var(--radius);
-}
-.avatar {
-  flex: none;
-  width: 40px;
-  height: 40px;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  border: 1px solid #2C3A42;
-  border-radius: 1px;
-  background: linear-gradient(160deg, #182227, #0D1417);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06);
-  color: var(--brass);
-  font-size: 18px;
-}
-.avatar svg { width: 22px; height: 22px; }
-.avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .icon-btn {
   flex: none;
   width: 48px;
@@ -588,40 +566,33 @@ input:not([type="checkbox"]):focus-visible, textarea:focus-visible {
 .update .icon-btn { width: 48px; height: 48px; margin: 0 -10px 0 0; color: var(--muted); }
 .update .icon-btn svg { width: 20px; height: 20px; }
 
-/* last sharpening: a blade certificate, full bleed */
+/* current edge: the photograph, then the reading */
 
 .last {
   position: relative;
-  padding: 14px max(16px, calc((100vw - 608px) / 2)) 18px;
-  background-color: #121A1F;
-  background-image:
-    var(--brushed),
-    linear-gradient(112deg, rgba(255, 255, 255, .04), transparent 46%),
-    linear-gradient(178deg, #151F24, #0D1418 78%, #0B1114);
-  border-bottom: 1px solid var(--line);
-  box-shadow: inset 0 1px 0 rgba(232, 240, 244, .07);
+  padding: 12px var(--edge) 18px;
   overflow: hidden;
 }
-.last::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(216, 163, 74, .28) 30%, rgba(216, 163, 74, .28) 70%, transparent);
+.edge-photo {
+  position: relative;
+  display: block;
+  height: 120px;
+  margin: 8px calc(-1 * var(--edge)) 0;
+  overflow: hidden;
+  background: var(--ground);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 15%, #000 85%, transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 15%, #000 85%, transparent 100%);
 }
-/* Light passes over the steel once, as the bevel opens. */
-.last::before {
-  content: "";
-  position: absolute;
-  inset: -60% -30%;
-  background: linear-gradient(104deg, transparent 44%, rgba(233, 243, 247, .1) 49%, rgba(255, 255, 255, .04) 51%, transparent 57%);
-  transform: translateX(-70%);
-  opacity: 0;
-  pointer-events: none;
+.edge-photo-frame {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  color: var(--steel);
 }
-.last.has-glint::before { animation: glint 900ms 80ms cubic-bezier(.22, 1, .36, 1); }
+.edge-photo-frame img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; }
+.edge-photo-frame > svg { width: 120px; height: 75px; opacity: .82; }
 .last-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 22px; }
 .last-main { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; margin-top: 6px; }
 .last-figure { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
@@ -633,7 +604,7 @@ input:not([type="checkbox"]):focus-visible, textarea:focus-visible {
   letter-spacing: -.035em;
   color: var(--brass);
 }
-.last .angle .deg { font-size: 38px; font-weight: 500; letter-spacing: 0; margin-left: 1px; }
+.last .angle .deg { font-size: .31em; font-weight: 500; letter-spacing: 0; margin-left: -.28em; vertical-align: 1.62em; }
 .last .angle .per { display: block; margin-top: 8px; font-family: var(--ui); font-size: 10px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--quiet); }
 .last .wedge { width: 94px; height: 82px; }
 .last .inc { font-size: 11.5px; color: var(--muted); }
@@ -650,14 +621,7 @@ input:not([type="checkbox"]):focus-visible, textarea:focus-visible {
 }
 .note { margin-top: 10px; font-size: 14.5px; line-height: 1.55; white-space: pre-line; }
 .note.muted { color: var(--muted); }
-.last .note::before {
-  content: "";
-  display: block;
-  width: 28px;
-  height: 1px;
-  margin-bottom: 10px;
-  background: var(--line-hi);
-}
+.last .note { max-width: 36ch; }
 
 .summary { margin: 22px 16px 2px; font-size: 12px; letter-spacing: .02em; color: var(--quiet); }
 
@@ -1011,7 +975,6 @@ body.modal-open { overflow: hidden; }
   .search { padding-left: 16px; padding-right: 16px; }
   .actionbar { padding-left: max(16px, calc((100vw - 640px) / 2)); padding-right: max(16px, calc((100vw - 640px) / 2)); }
   .form .field, .form .ratings, .switches, .form .error, .form .confirm { max-width: 608px; margin-left: auto; margin-right: auto; }
-  .last { padding-left: max(16px, calc((100vw - 640px) / 2)); padding-right: max(16px, calc((100vw - 640px) / 2)); }
   .toast { left: 0; right: 0; max-width: 608px; margin-left: auto; margin-right: auto; }
 }
 
@@ -1094,7 +1057,7 @@ body.modal-open { overflow: hidden; }
   .bench-figure .wedge { width: 80px; height: 68px; }
   .bench-inc { font-size: 10.5px; }
   .last .angle { font-size: 58px; }
-  .last .angle .deg { font-size: 32px; }
+  .last .angle .deg { font-size: .31em; }
   .last .wedge { width: 82px; height: 72px; }
   .last .inc { font-size: 10.5px; }
   .measure-figure { width: 86px; }
