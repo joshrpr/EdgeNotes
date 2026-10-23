@@ -575,8 +575,8 @@
       body + '<div class="row-actions">' + actions + '</div></div>';
   }
 
-  function openDialog(dialog, trigger) {
-    state.dialogReturn = trigger || null;
+  function openDialog(dialog, trigger, returnSelector) {
+    state.dialogReturn = returnSelector || (trigger ? '[data-act="' + trigger + '"]' : null);
     state.dialog = dialog;
     render(true);
   }
@@ -584,12 +584,12 @@
   // Closing returns focus to the control that opened the dialog, so a keyboard
   // or screen-reader user is not dropped at the top of the page.
   function closeDialog() {
-    const trigger = state.dialogReturn;
+    const selector = state.dialogReturn;
     state.dialog = null;
     state.dialogReturn = null;
     render(true);
-    if (!trigger) return;
-    const opener = document.querySelector('[data-act="' + trigger + '"]');
+    if (!selector) return;
+    const opener = document.querySelector(selector);
     const fallback = document.querySelector('[data-act="menu"]') || document.getElementById('search');
     if (opener) opener.focus();
     else if (fallback) fallback.focus();
@@ -598,7 +598,9 @@
   function renderDialog() {
     const d = state.dialog;
     document.body.classList.toggle('modal-open', !!d);
+    dialogEl.classList.toggle('is-sheet', !!d && d.type === 'session');
     if (!d) {
+      app.inert = false;
       dialogEl.hidden = true;
       dialogEl.innerHTML = '';
       return;
@@ -645,7 +647,38 @@
         '<p>&ldquo;' + esc(knife.name) + '&rdquo;' + (count ? ' and ' + plural(count, 'sharpening', 'sharpenings') : '') +
         ' will be removed. You can undo this for a few seconds.</p>',
         cancel + '<button class="btn danger" type="button" data-act="confirm-delete-knife">Delete</button>');
+    } else if (d.type === 'session') {
+      const knife = findKnife(d.knifeId);
+      const session = knife ? findSession(knife, d.sessionId) : null;
+      if (!knife || !session) {
+        state.dialog = null;
+        state.dialogReturn = null;
+        renderDialog();
+        return;
+      }
+      const rating = session.rating ? Core.RATINGS[session.rating] : '';
+      const flags = (session.burr ? '<span class="flag">Burr raised</span>' : '') +
+        (session.stropped ? '<span class="flag">Stropped</span>' : '');
+      html = '<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="session-title">' +
+        '<div class="sheet-grip" aria-hidden="true"></div>' +
+        '<div class="sheet-top">' +
+        '<span class="label">Sharpening session</span>' +
+        '<button class="icon-btn sheet-close" type="button" data-act="cancel-dialog" aria-label="Close session details">' + ICON_CLOSE + '</button>' +
+        '</div>' +
+        '<div class="sheet-body">' +
+        '<h2 class="sheet-date" id="session-title">' + esc(Core.fmtDate(session.date)) + '</h2>' +
+        '<div class="sheet-angle"><span class="sheet-num">' + Core.fmtNum(session.angle) +
+        '<span class="sheet-deg">&deg;</span></span><span class="sheet-per">per side</span></div>' +
+        '<div class="sheet-meta"><span>' + Core.fmtIncluded(session.angle) + ' included</span>' +
+        (rating ? '<span class="sheet-rating">' + esc(rating) + '</span>' : '') + '</div>' +
+        (flags ? '<div class="sheet-flags">' + flags + '</div>' : '') +
+        '<p class="sheet-note' + (session.notes ? '' : ' is-empty') + '">' +
+        esc(session.notes || 'No note recorded for this session.') + '</p>' +
+        '<div class="sheet-actions"><button class="btn" type="button" data-act="edit-session" data-session="' +
+        esc(session.id) + '">Edit sharpening</button></div>' +
+        '</div></div>';
     }
+    app.inert = true;
     dialogEl.innerHTML = html;
     dialogEl.hidden = !html;
     const first = dialogEl.querySelector('button');
@@ -732,7 +765,7 @@
     const carry = !!(state.passPending && reading);
     const history = sessions.map(session => {
       const rating = session.rating ? '<span class="s-rating">' + esc(Core.RATINGS[session.rating]) + '</span>' : '';
-      return '<li><button class="session" type="button" data-act="edit-session" data-session="' +
+      return '<li><button class="session" type="button" data-act="open-session" aria-haspopup="dialog" data-session="' +
         esc(session.id) + '"><span class="date">' + esc(Core.fmtDate(session.date)) + rating + '</span>' +
         '<span class="s-angle">' + Core.fmtNum(session.angle) + '<span class="deg">&deg;</span></span>' +
         ICON_CHEV + '</button></li>';
@@ -1337,6 +1370,12 @@
       case 'confirm-delete-knife':
         if (state.dialog && state.dialog.id) deleteKnife(state.dialog.id);
         break;
+      case 'open-session': {
+        const sessionId = el.getAttribute('data-session');
+        openDialog({ type: 'session', knifeId: knifeId, sessionId: sessionId }, null,
+          '[data-act="open-session"][data-session="' + sessionId + '"]');
+        break;
+      }
       case 'edit-session': {
         const sessionId = el.getAttribute('data-session');
         go('#/knife/' + encodeURIComponent(knifeId) + '/log/' + encodeURIComponent(sessionId));
