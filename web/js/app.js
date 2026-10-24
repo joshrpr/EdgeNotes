@@ -701,15 +701,14 @@
       '</div>';
   }
 
-  function edgePhoto(knife) {
-    const frame = photoSlot(knife.photoId, 'edge-photo-frame');
-    if (!knife.photoId) return '<div class="edge-photo is-empty">' + frame + '</div>';
-    return '<a class="edge-photo" href="#/knife/' + encodeURIComponent(knife.id) + '/photo" ' +
-      'aria-label="Open photo of ' + esc(knife.name) + '">' + frame + '</a>';
+  // The house photograph, not the owner's stored photo. Every knife shows this
+  // same band; the stored photo lives in the library thumbnail and the viewer.
+  function currentEdge() {
+    return '<div class="edge-photo" role="img" aria-label="The house knife on a black surface"></div>';
   }
 
   function lastSection(knife, latest, gauge, carry) {
-    const head = '<div class="last-top"><span class="label">Current edge</span></div>' + edgePhoto(knife);
+    const head = '<div class="last-top"><span class="label">Current edge</span></div>' + currentEdge();
     if (!latest) {
       return '<section class="last">' + head +
         '<p class="note muted">Not sharpened yet. Log the first angle and it will live here.</p></section>';
