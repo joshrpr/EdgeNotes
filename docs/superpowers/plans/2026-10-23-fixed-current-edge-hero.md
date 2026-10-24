@@ -1,6 +1,6 @@
 # Fixed Current-Edge Hero Implementation Plan
 
-**Status:** Ready to implement. The hero image is the still the user already supplied; no regeneration is required.
+**Status:** Implemented 2026-10-23. The hero image is the still the user already supplied; no regeneration was required.
 
 **Project root:** `C:\Users\joshr\Projects\Edgenotes2` (migrated 2026-10-23). The old `C:\Users\joshr\Projects\EdgeNotes` folder is backup-only.
 
@@ -13,6 +13,8 @@
 **Tech Stack:** Vanilla HTML/CSS/JS in `web/`, no framework or build step; `node:test`; Capacitor 8 Android WebView; existing `npm test`, `npm run sync` and Gradle.
 
 **Approved visual:** [prototypes/overdrive/photo.html](../../../prototypes/overdrive/photo.html) and [prototypes/overdrive/shots/photo-refined.png](../../../prototypes/overdrive/shots/photo-refined.png). The shipped still is [prototypes/overdrive/art/knife-hero.jpg](../../../prototypes/overdrive/art/knife-hero.jpg), the 1600×475 crop of the Gemini still the user supplied. The retry note in [prototypes/overdrive/art-prompt.md](../../../prototypes/overdrive/art-prompt.md) is optional future art direction, not a blocker.
+
+**Implementation record:** `web/assets/current-edge.jpg` is a byte-identical copy of the approved 1600×475 still (SHA-256 matches the source). `.edge-photo` paints it as a CSS background; `.edge-photo-frame` is gone; `View photo` appears in the overflow menu only when `photoId` exists. The narrow-crop step was needed: at 320 px `cover` cut the handle butt and the tip, so the planned `@media (max-width: 360px) { background-size: contain }` override shipped. Verified 17/17 tests, the four hero states, the viewer, 320/390/640 px, Android font scale 1.3 and reduced motion in the emulator, and the debug APK built from the synced bundle contains the asset. Open follow-up: the real camera/gallery path on physical hardware, which an emulator cannot exercise.
 
 ## Global Constraints
 
@@ -56,7 +58,7 @@
 **Interfaces:**
 - Produces: the static file `assets/current-edge.jpg`, resolved relative to `web/style.css`.
 
-- [ ] **Step 1: Confirm the source is the approved crop**
+- [x] **Step 1: Confirm the source is the approved crop**
 
 Run:
 
@@ -66,7 +68,7 @@ powershell.exe -NoProfile -Command "Add-Type -AssemblyName System.Drawing; \$i=[
 
 Expected: `1600x475` and roughly 60 KB. This is the same crop used by `photo-refined.png`; use it as-is. Do not re-crop, re-encode, or regenerate it.
 
-- [ ] **Step 2: Copy it into the web bundle**
+- [x] **Step 2: Copy it into the web bundle**
 
 Run:
 
@@ -75,7 +77,7 @@ mkdir -p web/assets
 cp prototypes/overdrive/art/knife-hero.jpg web/assets/current-edge.jpg
 ```
 
-- [ ] **Step 3: Verify the copy**
+- [x] **Step 3: Verify the copy**
 
 Run:
 
@@ -85,7 +87,7 @@ powershell.exe -NoProfile -Command "Add-Type -AssemblyName System.Drawing; \$i=[
 
 Expected: `1600x475`, roughly 60 KB.
 
-- [ ] **Step 4: Commit the asset alone**
+- [x] **Step 4: Commit the asset alone**
 
 ```bash
 git add web/assets/current-edge.jpg
@@ -104,7 +106,7 @@ git commit -m "feat: add the house knife hero photograph"
 - Consumes: nothing; the house hero is not tied to a knife.
 - Produces: `currentEdge(): string` and a `.edge-photo` block whose background is `assets/current-edge.jpg`. `photoSlot(id, cls)` stays unchanged for the library, bench and form.
 
-- [ ] **Step 1: Run the failing browser check**
+- [x] **Step 1: Run the failing browser check**
 
 Serve the app from the app root:
 
@@ -124,7 +126,7 @@ Open `http://127.0.0.1:4321/`, add a knife with a photo, open its page, and run:
 
 Expected before the change: `bg: "none"`, `stored: true`, and the HTML starts with `<a class="edge-photo" ... data-photo=...>`.
 
-- [ ] **Step 2: Replace `edgePhoto` with `currentEdge` in `app.js`**
+- [x] **Step 2: Replace `edgePhoto` with `currentEdge` in `app.js`**
 
 Delete the whole `edgePhoto(knife)` function and add:
 
@@ -150,7 +152,7 @@ const head = '<div class="last-top"><span class="label">Current edge</span></div
 
 Leave `photoSlot()` in place: `rowHtml`, `benchHtml` and `knifeFormView` still use it.
 
-- [ ] **Step 3: Put the photograph on the fixed band**
+- [x] **Step 3: Put the photograph on the fixed band**
 
 In `style.css`, change the `background` line in `.edge-photo` from:
 
@@ -176,7 +178,7 @@ Delete the now-unused `.edge-photo-frame` block:
 
 The hero is deliberately a CSS background rather than an `<img>`: it cannot be mistaken for a stored photo, `hydratePhotos()` cannot replace it, and a missing asset leaves the plain ground colour instead of a broken-image icon or the glyph.
 
-- [ ] **Step 4: Check the narrow crop**
+- [x] **Step 4: Check the narrow crop**
 
 At 320 px, confirm the handle butt and the tip are still both visible. If `cover` cuts either end, add this only at the narrow breakpoint:
 
@@ -188,7 +190,7 @@ At 320 px, confirm the handle butt and the tip are still both visible. If `cover
 
 Do not stretch the image, and do not change the 390/640 crop if 320 already holds.
 
-- [ ] **Step 5: Re-run the browser check**
+- [x] **Step 5: Re-run the browser check**
 
 The same console expression must return:
 
@@ -202,7 +204,7 @@ The same console expression must return:
 
 `bg` may include a full URL; it must contain `current-edge.jpg`. Repeat on a knife with no photo, a knife after Remove photo, and an orphaned `photoId`: the result must be identical. The `Current edge` label, angle, wedge, history and action bar must not move.
 
-- [ ] **Step 6: Run the tests**
+- [x] **Step 6: Run the tests**
 
 ```bash
 npm test
@@ -210,7 +212,7 @@ npm test
 
 Expected: 17 passing, 0 failing.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add web/js/app.js web/style.css
@@ -228,11 +230,11 @@ git commit -m "feat: fix the current edge to the house photograph"
 - Consumes: `knife.photoId`, `go(hash)`, `currentKnifeId()`.
 - Produces: a conditional `data-act="view-photo"` menu item that opens the existing `/knife/:id/photo` route.
 
-- [ ] **Step 1: Confirm the current gap**
+- [x] **Step 1: Confirm the current gap**
 
 On a knife with a photo, open the overflow menu. Before this task it contains only "Edit knife" and "Delete knife"; the hero link was the only photo viewer entry, and Task 2 removed it.
 
-- [ ] **Step 2: Add the conditional menu item**
+- [x] **Step 2: Add the conditional menu item**
 
 Change `knifeMenu(knife)` to:
 
@@ -246,7 +248,7 @@ Change `knifeMenu(knife)` to:
   }
 ```
 
-- [ ] **Step 3: Handle the click**
+- [x] **Step 3: Handle the click**
 
 In the `onClick` switch, add before `case 'edit-knife':`:
 
@@ -259,7 +261,7 @@ In the `onClick` switch, add before `case 'edit-knife':`:
 
 The existing `knifeView(id, true)` viewer, its close button, Escape and Android Back already handle the route; do not add a second viewer.
 
-- [ ] **Step 4: Verify the three menu states**
+- [x] **Step 4: Verify the three menu states**
 
 - Photo knife: menu shows "View photo"; clicking it opens `.viewer`; the X, Escape and Android Back return to the knife page.
 - No-photo knife: menu has no "View photo"; Edit and Delete are unchanged.
@@ -267,7 +269,7 @@ The existing `knifeView(id, true)` viewer, its close button, Escape and Android 
 
 The hero must stay `assets/current-edge.jpg` in all three states.
 
-- [ ] **Step 5: Run the tests**
+- [x] **Step 5: Run the tests**
 
 ```bash
 npm test
@@ -275,7 +277,7 @@ npm test
 
 Expected: 17 passing, 0 failing.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add web/js/app.js
@@ -292,7 +294,7 @@ git commit -m "feat: keep the stored photo reachable from the knife menu"
 - Modify: `docs/superpowers/plans/2026-10-22-photo-knife-page.md` (superseded banner)
 - Modify: `prototypes/overdrive/art-prompt.md` (shipped asset note)
 
-- [ ] **Step 1: Update the design brief**
+- [x] **Step 1: Update the design brief**
 
 In `docs/design-brief.md`:
 
@@ -303,7 +305,7 @@ In `docs/design-brief.md`:
 - In §6 No history, keep the photo: `- **No history:** the current edge still shows the house photograph and "Not sharpened yet. Log the first angle and it will live here."; the bar reads "Log first sharpening" with no angle.`
 - Replace the No photo bullet with: `- **No photo:** the current edge still shows the house photograph; the library thumbnail and viewer fall back to the house knife, never a grey box.`
 
-- [ ] **Step 2: Update the design system**
+- [x] **Step 2: Update the design system**
 
 In `DESIGN.md`:
 
@@ -311,7 +313,7 @@ In `DESIGN.md`:
 - Replace the Current edge bullet with: `- **Current edge:** the knife page's photo-led block. The same 120 px full-bleed house photograph on every knife (masked at the top and bottom); never the owner's stored photo. The "Current edge" label; 66 px angle with a raised .31em degree and 10 px "per side"; wedge at 94 × 82; the last-sharpened relative and exact date; rating, burr/stropped chips and the note capped at 36 ch. The app bar carries no thumbnail.`
 - Replace the guardrail with: `- The current-edge photograph is the house image, identical on every knife; the owner's photo is a library thumbnail and a full-screen viewer. Never put the owner's stored photo in the hero, and never invent new knife photography.`
 
-- [ ] **Step 3: Mark the old plan superseded**
+- [x] **Step 3: Mark the old plan superseded**
 
 At the top of `docs/superpowers/plans/2026-10-22-photo-knife-page.md`, immediately after the title, add:
 
@@ -321,7 +323,7 @@ At the top of `docs/superpowers/plans/2026-10-22-photo-knife-page.md`, immediate
 
 Leave the rest of the old plan intact; it is a record of what was executed, not a live instruction.
 
-- [ ] **Step 4: Record the shipped still**
+- [x] **Step 4: Record the shipped still**
 
 Add this section to `prototypes/overdrive/art-prompt.md`, after the intro and before the first `---`:
 
@@ -336,7 +338,7 @@ not a blocker for the hero.
 
 In the Hand-off section, add one line: `The shipped asset is already web/assets/current-edge.jpg; a replacement still would replace that file, not the fixed-hero behavior.`
 
-- [ ] **Step 5: Check for stale claims**
+- [x] **Step 5: Check for stale claims**
 
 Run:
 
@@ -346,7 +348,7 @@ grep -nE "user's own|knife's own photo|own photo|photo leads|current-edge photo|
 
 Expected: no hits that say the owner's photo leads the current edge. Hits about the library thumbnail or the form preview are fine.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add docs/design-brief.md DESIGN.md docs/superpowers/plans/2026-10-22-photo-knife-page.md prototypes/overdrive/art-prompt.md
@@ -359,7 +361,7 @@ git commit -m "docs: record the fixed house hero"
 
 **Files:** none.
 
-- [ ] **Step 1: Run the unit tests**
+- [x] **Step 1: Run the unit tests**
 
 ```bash
 npm test
@@ -367,7 +369,7 @@ npm test
 
 Expected: 17 passing, 0 failing. There is no new unit test; the DOM behavior is checked below.
 
-- [ ] **Step 2: Check the four hero states in the browser**
+- [x] **Step 2: Check the four hero states in the browser**
 
 Serve `web/` and create:
 
@@ -397,14 +399,14 @@ For each knife, run:
 
 Expected on all four: `bg` contains `assets/current-edge.jpg`, `stored: false`, `label: "Current edge"`, `overflow: "visible"` (or no horizontal scroll). The photo and orphan knives show "View photo" in the menu; the plain and removed-photo knives do not.
 
-- [ ] **Step 3: Check the viewer and the unchanged photo surfaces**
+- [x] **Step 3: Check the viewer and the unchanged photo surfaces**
 
 - Open the photo knife's menu, choose "View photo", confirm the image fills the viewer, then close with X, Escape and Android Back.
 - Confirm the library thumbnail still shows the chosen photo; the no-photo row still shows the glyph.
 - Open Edit knife and confirm the photo preview still shows the chosen photo; Remove photo still falls back to the glyph.
 - Confirm the log sheet, session sheet, history, plate and blade pass are unchanged.
 
-- [ ] **Step 4: Check widths and text scale**
+- [x] **Step 4: Check widths and text scale**
 
 At 320, 390 and 640 px, and with Android font scale 1.3:
 
@@ -413,7 +415,7 @@ At 320, 390 and 640 px, and with Android font scale 1.3:
 - The angle, wedge, label and action bar keep their positions.
 - With `prefers-reduced-motion: reduce`, the page still renders the fixed hero and the angle without the blade pass.
 
-- [ ] **Step 5: Check the Android bundle**
+- [x] **Step 5: Check the Android bundle**
 
 ```bash
 npm run sync
@@ -423,7 +425,7 @@ cd android && ./gradlew assembleDebug
 
 Install `android/app/build/outputs/apk/debug/app-debug.apk` on the emulator or phone. Open a photo knife and a plain knife: both heroes are the same house photograph; the photo knife's menu still opens the viewer; Back returns to the knife. If no device is available, report the Android check as blocked, not passed.
 
-- [ ] **Step 6: Final review**
+- [x] **Step 6: Final review**
 
 ```bash
 git status --short
