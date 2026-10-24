@@ -385,6 +385,9 @@ input:not([type="checkbox"]):focus-visible, textarea:focus-visible {
   font-size: 24px;
 }
 .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb.house-photo {
+  background: var(--ground) url("assets/house-thumb.jpg") center / cover no-repeat;
+}
 .row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .row-name {
   font-family: var(--display);
@@ -612,7 +615,7 @@ input:not([type="checkbox"]):focus-visible, textarea:focus-visible {
   letter-spacing: -.035em;
   color: var(--brass);
 }
-.last .angle .deg { font-size: .31em; font-weight: 500; letter-spacing: 0; margin-left: -.28em; vertical-align: 1.62em; }
+.last .angle .deg { font-size: .31em; font-weight: 500; letter-spacing: 0; margin-left: .1em; vertical-align: 1.62em; }
 .last .angle .per { display: block; margin-top: 8px; font-family: var(--ui); font-size: 10px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--quiet); }
 .last .wedge { width: 94px; height: 82px; }
 .last .inc { font-size: 11.5px; color: var(--muted); }
@@ -971,7 +974,7 @@ input::placeholder, textarea::placeholder { color: #8D9CA3; }
 .sheet-date { margin: 0; font-family: var(--display); font-size: 22px; font-weight: 600; }
 .sheet-angle { display: flex; align-items: baseline; gap: 10px; margin-top: 6px; }
 .sheet-num { font-family: var(--display); font-size: 48px; font-weight: 600; line-height: 1; letter-spacing: -.03em; color: var(--brass); }
-.sheet-deg { font-size: .32em; vertical-align: 1.62em; margin-left: -.28em; letter-spacing: 0; }
+.sheet-deg { font-size: .32em; vertical-align: 1.62em; margin-left: .1em; letter-spacing: 0; }
 .sheet-per { font-size: 10px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--quiet); }
 .sheet-meta {
   display: flex;

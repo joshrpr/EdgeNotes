@@ -181,8 +181,10 @@
     }, 250);
   }
 
+  // A knife without a photo shows the house photograph, square-cropped, so the
+  // library and the knife page agree on what the house knife looks like.
   function photoSlot(id, cls) {
-    if (!id) return '<span class="' + cls + '">' + GLYPH + '</span>';
+    if (!id) return '<span class="' + cls + ' house-photo" aria-hidden="true"></span>';
     return '<span class="' + cls + '" data-photo="' + esc(id) + '">' + GLYPH + '</span>';
   }
 
