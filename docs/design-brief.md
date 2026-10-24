@@ -1,7 +1,7 @@
 # Edge Notes — Design Brief
 
-**Status:** implemented (v3, photo-led knife page)
-**Date:** 2026-10-22
+**Status:** implemented (v3.1, fixed house hero)
+**Date:** 2026-10-23
 **Sources:** `PRODUCT.md`, `docs/requirements.md`
 **Mode:** Operate — the user came to get a job done at the bench.
 
@@ -26,11 +26,13 @@ repeat sharpening is logged without typing the angle again.
 ## 3. Selected direction — Honyaki
 
 The world is a hand-forged blade at night: brushed sumi-black steel, a hamon temper
-line, brass for the measurement and the one primary action. The knife's own photo
-leads the current edge. The Japanese cue comes from the metallurgy and the Mincho
-lettering — not from costume: no kanji, no blossoms, no rising sun, no faux-wood
-decoration. On an Operate surface the world changes type, light, material and one
-signature instrument; the one-stack navigation, touch sizes and plain voice stay.
+line, brass for the measurement and the one primary action. The house knife's
+photograph leads the current edge, the same on every knife; the owner's photo is a
+thumbnail and a full-screen viewer, never the hero. The Japanese cue comes from the
+metallurgy and the Mincho lettering — not from costume: no kanji, no blossoms, no
+rising sun, no faux-wood decoration. On an Operate surface the world changes type,
+light, material and one signature instrument; the one-stack navigation, touch sizes
+and plain voice stay.
 Vermilion was retired on 2026-10-22; no seal, chop or red record mark remains.
 
 ### Palette
@@ -118,10 +120,11 @@ the Android navigation inset.
 
 ### Knife
 
-- App bar: back, the name in Mincho, overflow (Edit, Delete). No thumbnail; the
-  photo belongs to the edge, not the chrome.
-- **Current edge:** a full-bleed 120 sp photo (masked at the top and bottom) or the
-  house knife in the same frame; the "Current edge" label; the angle at 66 sp in
+- App bar: back, the name in Mincho, overflow (View photo when a photo exists,
+  Edit, Delete). No thumbnail; the house photograph belongs to the edge, not the
+  chrome.
+- **Current edge:** the same full-bleed 120 sp house photograph on every knife
+  (masked at the top and bottom); the "Current edge" label; the angle at 66 sp in
   brass with a raised degree and "per side"; the wedge with "35° included"; and the
   relative and exact date. Rating, burr/stropped chips and the note follow on the
   same ground, the note capped at 36 ch.
@@ -176,11 +179,11 @@ the form and shows Undo; nothing else interrupts.
 
 - **Empty library:** the house gyuto drawn flat in steel and walnut, "No knives yet",
   one add path in the fixed bar.
-- **No history:** the current edge shows the house knife and "Not sharpened yet. Log
-  the first angle and it will live here."; the bar reads "Log first sharpening" with
-  no angle.
-- **No photo:** the house knife in the current-edge frame and in place of a missing
-  thumbnail, never a grey box.
+- **No history:** the current edge still shows the house photograph and "Not
+  sharpened yet. Log the first angle and it will live here."; the bar reads "Log
+  first sharpening" with no angle.
+- **No photo:** the current edge still shows the house photograph; the library
+  thumbnail and viewer fall back to the house knife, never a grey box.
 - **Session sheet:** an empty note reads "No note recorded for this session."; the
   rating and flags are omitted when they were not recorded.
 - **No search matches:** the house gyuto, a line naming the query and a clear action.

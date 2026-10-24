@@ -2,7 +2,7 @@
 
 **Honyaki.** A hand-forged blade at night: brushed sumi steel, a hamon temper line,
 and brass for the measurement and the one primary action. The knife page leads with
-the current edge photo. Built from the shipped interface on 2026-10-22. The
+the fixed house photograph. Built from the shipped interface on 2026-10-23. The
 reasoning and the surface brief live in `docs/design-brief.md`; this file is the
 implementation reference.
 
@@ -85,11 +85,12 @@ only; it is never decoration.
   glint runs on press; it is the only hover/press treatment on the plate.
 - **Library row:** 54 px thumbnail in a steel frame, Mincho 17 name, 12.5 meta,
   29 px brass angle and 11 px recency. A translucent top-light appears on press.
-- **Current edge:** the knife page's photo-led block. A 120 px full-bleed photo
-  (masked at the top and bottom) or the house knife in the same frame; the "Current
-  edge" label; 66 px angle with a raised `.31em` degree and 10 px "per side"; wedge
-  at 94 × 82; the last-sharpened relative and exact date; rating, burr/stropped chips
-  and the note capped at 36 ch. The app bar carries no thumbnail.
+- **Current edge:** the knife page's photo-led block. The same 120 px full-bleed
+  house photograph on every knife (masked at the top and bottom); never the owner's
+  stored photo. The "Current edge" label; 66 px angle with a raised `.31em` degree
+  and 10 px "per side"; wedge at 94 × 82; the last-sharpened relative and exact date;
+  rating, burr/stropped chips and the note capped at 36 ch. The app bar carries no
+  thumbnail.
 - **History head and rows:** "Sharpening History" in Mincho 16, the session count in
   10 px tracked caps, and "Past range 17.5°–21° per side" beneath. Rows are a 62 px
   three-column grid: date and optional rating, 25 px Mincho angle with a raised
@@ -136,7 +137,8 @@ the next step.
 - No faux wood, bamboo, blossoms, rising sun or lantern emoji.
 - No dial, slider or chart for the angle; the wedge is a static-to-live readout and
   the input stays a keyboard field.
-- The current-edge photo is the user's own; the house knife is the fallback. Never
-  invent knife photography.
+- The current-edge photograph is the house image, identical on every knife; the
+  owner's photo is a library thumbnail and a full-screen viewer. Never put the
+  owner's stored photo in the hero, and never invent new knife photography.
 - The system serves one owner, one hand, one dim bench. If a flourish costs the angle
   a second of legibility, it goes.

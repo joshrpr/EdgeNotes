@@ -8,6 +8,13 @@ The hero slot on the knife page is a wide band, roughly 4.2:1. Generate landscap
 16:9 if the tool allows it, otherwise 3:2, with the whole knife in frame and empty
 space above and below so there is room to crop.
 
+## Shipped asset
+
+The fixed hero is `web/assets/current-edge.jpg`, copied from
+`prototypes/overdrive/art/knife-hero.jpg` (1600×475). That still is the approved
+house photograph. The retry note below is optional future art direction; it is
+not a blocker for the hero.
+
 ---
 
 ## Master prompt
@@ -81,3 +88,5 @@ regenerating, not by editing the knife shape afterwards.
   drawn over the top.
 - Send it back and I will crop the band, match the page black, add a soft radial
   falloff so no cutout is needed, and keep the brass angle and gauge as UI.
+- The shipped asset is already `web/assets/current-edge.jpg`; a replacement still
+  would replace that file, not the fixed-hero behavior.

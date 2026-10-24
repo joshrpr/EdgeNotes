@@ -1,5 +1,7 @@
 # Photo-Led Knife Page Implementation Plan
 
+> **Superseded (2026-10-23):** The hero is now the fixed house photograph in [2026-10-23-fixed-current-edge-hero.md](2026-10-23-fixed-current-edge-hero.md), not `photoSlot(knife.photoId)`. The owner's photo stays a thumbnail and viewer. Do not reintroduce `photoId` into the hero.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Bring the approved photo-led knife page into the existing Edge Notes app: a photographic current-edge block, a quieter history with a session detail sheet, and a brass Log Sharpening plate, without changing stored records or the log flow.
