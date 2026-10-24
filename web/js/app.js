@@ -696,6 +696,7 @@
 
   function knifeMenu(knife) {
     return '<div class="menu" role="menu">' +
+      (knife.photoId ? '<button type="button" role="menuitem" data-act="view-photo">View photo</button>' : '') +
       '<button type="button" role="menuitem" data-act="edit-knife">Edit knife</button>' +
       '<button class="danger" type="button" role="menuitem" data-act="delete-knife">Delete knife</button>' +
       '</div>';
@@ -1369,6 +1370,10 @@
       case 'menu':
         state.menu = !state.menu;
         render(true);
+        break;
+      case 'view-photo':
+        state.menu = false;
+        go('#/knife/' + encodeURIComponent(knifeId) + '/photo');
         break;
       case 'edit-knife':
         state.menu = false;
